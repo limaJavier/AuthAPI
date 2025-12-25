@@ -1,0 +1,1 @@
+dotnet ef database update -p **/*Infrastructure -s **/*Api
