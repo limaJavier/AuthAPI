@@ -32,7 +32,7 @@ public class UserRegisteredEventHandler(
         }
         else
         {
-            _logger.LogInformation("A verification-email was sended to {Email} with code {Code}", session.Email, session.Code);
+            _logger.LogInformation("A verification-email was sent to {Email} with code {Code}", session.Email, session.Code);
         }
     }
 }

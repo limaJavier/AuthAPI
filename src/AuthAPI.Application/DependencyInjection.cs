@@ -18,7 +18,6 @@ public static class DependencyInjection
 
             options.PipelineBehaviors = [
                 typeof(ValidationBehavior<,>),
-                // typeof(ValidationBehavior),
             ];
         });
 
