@@ -1,6 +1,10 @@
 using AuthAPI.Application.Common.Interfaces;
+using AuthAPI.Application.Common.Interfaces.Repositories;
+using AuthAPI.Domain.Common.Interfaces;
 using AuthAPI.Infrastructure.Persistence;
+using AuthAPI.Infrastructure.Persistence.Repositories;
 using AuthAPI.Infrastructure.Services;
+using AuthAPI.Infrastructure.Services.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,10 +21,15 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         // Add services
-        services.AddScoped<IUnitOfWork>(serviceProvider => 
+        services.AddScoped<IUnitOfWork>(serviceProvider =>
             serviceProvider.GetRequiredService<AuthAPIDbContext>());
+        services.AddScoped<IUserRepository, UserRepository>();
 
         services.AddScoped<IApplicationEventQueue, ApplicationEventQueue>();
+        services.AddSingleton<IHasher, Hasher>();
+        services.AddSingleton<ITokenGenerator, TokenGenerator>();
+        services.AddSingleton<IVerificationSessionManager, VerificationSessionManager>();
+        services.AddSingleton<IEmailSender, EmailSender>();
 
         return services;
     }

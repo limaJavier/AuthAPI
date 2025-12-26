@@ -1,4 +1,3 @@
-using AuthAPI.Application.Common;
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Infrastructure.Middlewares;
 using Mediator;

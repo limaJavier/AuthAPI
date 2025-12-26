@@ -1,5 +1,7 @@
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Domain.Common;
+using AuthAPI.Domain.UserAggregate;
+using AuthAPI.Domain.UserAggregate.Entities;
 using AuthAPI.Infrastructure.Middlewares;
 using Mediator;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +12,9 @@ namespace AuthAPI.Infrastructure.Persistence;
 
 public class AuthAPIDbContext(DbContextOptions<AuthAPIDbContext> options, IHttpContextAccessor httpContextAccessor, IPublisher publisher) : DbContext(options), IUnitOfWork
 {
+    public DbSet<User> Users { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private readonly IPublisher _publisher = publisher;
 
