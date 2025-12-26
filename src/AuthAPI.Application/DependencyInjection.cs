@@ -1,3 +1,5 @@
+using AuthAPI.Application.Common.Behaviors;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AuthAPI.Application;
@@ -13,7 +15,13 @@ public static class DependencyInjection
                 typeof(DependencyInjection).Assembly
             ];
             options.ServiceLifetime = ServiceLifetime.Scoped;
+
+            options.PipelineBehaviors = [
+                typeof(ValidationBehavior<,>),
+            ];
         });
+
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly); // Scan validators
 
         return services;
     }
