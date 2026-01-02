@@ -47,4 +47,26 @@ public class User : AggregateRoot
         else
             return Error.Conflict("Wrong password");
     }
+
+    public Result Verify()
+    {
+        if (IsVerified)
+            return Error.Conflict($"User with ID {Id} is already verified");
+        IsVerified = true;
+        return Result.Success();
+    }
+
+    public string AddRefreshToken(ITokenGenerator tokenGenerator, IHasher hasher)
+    {
+        // Create token
+        var refreshTokenStr = tokenGenerator.GenerateRandomToken();
+        var refreshToken = RefreshToken.Create(
+            hash: hasher.Hash(refreshTokenStr),
+            expiresAtUtc: DateTime.UtcNow.AddDays(15),
+            userId: Id
+        );
+        // Add token
+        RefreshTokens.Add(refreshToken);
+        return refreshTokenStr;
+    }
 }

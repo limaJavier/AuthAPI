@@ -1,0 +1,29 @@
+@email=julia@mail.com
+@verificationToken= {{register.response.body.verificationToken}}
+@verificationCode=t+XFU6yXnMY=
+# @accessToken= {{verify.response.body.accessToken}}
+# @refreshToken= {{verify.response.headers.Set-Cookie}}
+
+
+### Register
+# @name register
+
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "John",
+    "email": "{{email}}",
+    "password": "Password0;"
+}
+
+### Verify 
+# @name verify
+
+POST {{host}}/auth/verify-email
+Content-Type: application/json
+
+{
+    "verificationToken": "{{verificationToken}}",
+    "verificationCode": "{{verificationCode}}"
+}

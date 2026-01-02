@@ -14,4 +14,22 @@ public class RefreshToken : Entity
 
     public Guid? ReplacementTokenId { get; private set; }
     public RefreshToken? ReplacementToken { get; private set; } = null!;
+
+    private RefreshToken() { }
+
+    internal static RefreshToken Create(
+        string hash,
+        DateTime expiresAtUtc,
+        Guid userId
+    )
+    {
+        var token = new RefreshToken
+        {
+            Hash = hash,
+            ExpiresAtUtc = expiresAtUtc,
+            UserId = userId
+        };
+
+        return token;
+    }
 }

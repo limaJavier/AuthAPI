@@ -5,6 +5,7 @@ using AuthAPI.Infrastructure.Persistence;
 using AuthAPI.Infrastructure.Persistence.Repositories;
 using AuthAPI.Infrastructure.Services;
 using AuthAPI.Infrastructure.Services.Security;
+using AuthAPI.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +32,21 @@ public static class DependencyInjection
         services.AddSingleton<IVerificationSessionManager, VerificationSessionManager>();
         services.AddSingleton<IEmailSender, EmailSender>();
 
+        services.AddSettings(configuration);
+
+        return services;
+    }
+
+    private static IServiceCollection AddSettings(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<JwtSettings>(
+            configuration.GetSection(nameof(JwtSettings))
+        );
+
+        // services.Configure<EmailSettings>(
+        //     configuration.GetSection(nameof(EmailSettings))
+        // );
+        
         return services;
     }
 }

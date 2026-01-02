@@ -3,7 +3,7 @@ using AuthAPI.Api.Features.Auth.Common.Responses;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Tests.Features.Common;
 using AuthAPI.Api.Tests.Features.Utils;
-using AuthAPI.Api.Tests.Features.Utils.Constants;
+using AuthAPI.Api.Tests.Features.Utils.Routes;
 using AuthAPI.Api.Tests.Fixtures;
 using AuthAPI.Domain.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +26,7 @@ public class RegisterWithEmailTests(ITestOutputHelper output, PostgresContainerF
         //** Act
         var response = await _client.SendAsync<VerificationResponse>(
             method: HttpMethod.Post,
-            route: AuthRoutes.Register,
+            route: Routes.Auth.Register,
             body: request
         );
 
@@ -54,10 +54,10 @@ public class RegisterWithEmailTests(ITestOutputHelper output, PostgresContainerF
 
         //** Act
         // Register the first user
-        await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, AuthRoutes.Register, request1);
+        await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.Register, request1);
 
         // Register the second user
-        var httpResponse2 = await _client.SendAsync(HttpMethod.Post, AuthRoutes.Register, request2);
+        var httpResponse2 = await _client.SendAsync(HttpMethod.Post, Routes.Auth.Register, request2);
 
         // Retrieve active user with the request email from database
         var users = await _dbContext.Users.Where(user => user.Email == request1.Email).ToListAsync();
@@ -75,7 +75,7 @@ public class RegisterWithEmailTests(ITestOutputHelper output, PostgresContainerF
         //** Act
         var httpResponse = await _client.SendAsync(
             method: HttpMethod.Post,
-            route: AuthRoutes.Register,
+            route: Routes.Auth.Register,
             body: request
         );
 
@@ -93,7 +93,7 @@ public class RegisterWithEmailTests(ITestOutputHelper output, PostgresContainerF
         yield return [AuthRequestsFactory.CreateRegisterRequest(email: "missingdomain@")];
         yield return [AuthRequestsFactory.CreateRegisterRequest(email: "@missingusername.com")];
         yield return [AuthRequestsFactory.CreateRegisterRequest(email: "toolong" + new string('a', 250) + "@example.com")];
-        
+
         yield return [AuthRequestsFactory.CreateRegisterRequest(password: "short1!")];
         yield return [AuthRequestsFactory.CreateRegisterRequest(password: "alllowercase1!")];
         yield return [AuthRequestsFactory.CreateRegisterRequest(password: "ALLUPPERCASE1!")];
