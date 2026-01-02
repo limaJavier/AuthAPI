@@ -24,7 +24,7 @@ public class RefreshEndpoint(
     public override async Task<AuthResponse> ExecuteAsync(CancellationToken ct)
     {
         var refreshToken = HttpContext.GetRefreshToken() 
-            ?? throw ApiException.Conflict("Cannot resolve refresh_token cookie");
+            ?? throw ApiException.Unauthorized("Cannot resolve refresh_token cookie");
 
         var command = new RefreshCommand(refreshToken);
         var result = await _sender.Send(command);

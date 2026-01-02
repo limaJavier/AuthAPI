@@ -48,8 +48,56 @@ public class RefreshTests(ITestOutputHelper output, PostgresContainerFixture pos
         Assert.Equal(oldRefreshToken.ReplacementTokenId, newRefreshToken.Id); // Old refresh-token was replaced
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(5)]
+    [InlineData(10)]
+    public async Task WhenRefreshTokenWasAlreadyReplaced_ShouldRevokeChainAndReturnUnauthorized(int chainLength)
+    {
+        //** Arrange
+        var tokenChain = new List<string>();
+        var (_, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
+        tokenChain.Add(refreshTokenStr);
+
+        // Resolve dependencies
+        var hasher = _serviceProvider.GetRequiredService<IHasher>();
+
+        //** Act
+        HttpResponseMessage httpResponse;
+        foreach (var _ in Enumerable.Range(0, chainLength))
+        {
+            httpResponse = await _client.SendAndEnsureSuccessAsync(
+                method: HttpMethod.Post,
+                route: Routes.Auth.Refresh,
+                refreshToken: refreshTokenStr
+            );
+
+            var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
+            refreshTokenStr = AuthFlows.ExtractTokenFromCookie(refreshTokenHeader);
+            tokenChain.Add(refreshTokenStr);
+        }
+
+        // Send a replaced (and revoked) token
+        httpResponse = await _client.SendAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.Refresh,
+            refreshToken: tokenChain[0]
+        );
+
+        var user = await _dbContext.Users
+            .Include(user => user.RefreshTokens)
+            .FirstAsync(user => user.Email == Constants.User.Email);
+
+        var revokedChain = user.RefreshTokens.Where(token =>
+            tokenChain.Any(tokenStr => hasher.VerifyDeterministic(tokenStr, token.Hash)));
+
+        //** Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode); // Unauthorized status code
+        Assert.All(revokedChain, token => Assert.NotNull(token.RevokedAtUtc)); // All tokens in the chain are revoked
+    }
+
     [Fact]
-    public async Task WhenRefreshTokensIsMissing_ShouldReturnConflict()
+    public async Task WhenRefreshTokensIsMissing_ShouldReturnUnauthorized()
     {
         //** Arrange
         await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
@@ -61,11 +109,11 @@ public class RefreshTests(ITestOutputHelper output, PostgresContainerFixture pos
         );
 
         // Assert
-        Assert.Equal(HttpStatusCode.Conflict, httpResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
     }
 
     [Fact]
-    public async Task WhenRefreshTokensDoesNotExist_ShouldReturnNotFound()
+    public async Task WhenRefreshTokensDoesNotExist_ShouldReturnUnauthorized()
     {
         //** Arrange
         await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
@@ -81,6 +129,6 @@ public class RefreshTests(ITestOutputHelper output, PostgresContainerFixture pos
         );
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, httpResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
     }
 }

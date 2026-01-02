@@ -23,15 +23,9 @@ public class RefreshCommandHandler(
     {
         //** Get user by refresh-token
         var refreshTokenHash = _hasher.HashDeterministic(command.RefreshToken);
-        var userResult = await _userRepository.GetByRefreshTokenHashAsync(refreshTokenHash);
-        if (userResult.IsFailure)
-            return userResult.Error;
-        var user = userResult.Value;
-
-        // Replace refresh token
-        var result = user.ReplaceRefreshToken(command.RefreshToken, _hasher, _tokenGenerator);
-        if (result.IsFailure)
-            return result.Error;
+        var user = await _userRepository.GetByRefreshTokenHashAsync(refreshTokenHash);
+        if (user is null)
+            return Error.Unauthorized($"Refresh-Token {command.RefreshToken} does not exist");
 
         // Generate JWT token
         var accessToken = _tokenGenerator.GenerateAccessToken(new AccessTokenGenerationParameters(
@@ -39,7 +33,12 @@ public class RefreshCommandHandler(
             user.Email
         ));
 
+        // Replace refresh token
+        var result = user.ReplaceRefreshToken(command.RefreshToken, _hasher, _tokenGenerator);
         await _unitOfWork.CommitAsync();
+
+        if (result.IsFailure)
+            return result.Error;
 
         return new AuthResult(result.Value, accessToken);
     }

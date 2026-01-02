@@ -78,19 +78,20 @@ public class User : AggregateRoot
         if (oldToken is null)
             return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
 
-        // Add new refresh-token
+        // Create new refresh-token
         var newTokenStr = tokenGenerator.GenerateRandomToken();
         var newToken = RefreshToken.Create(
             hash: hasher.HashDeterministic(newTokenStr),
             expiresAtUtc: DateTime.UtcNow.AddDays(15),
             userId: Id
         );
-        RefreshTokens.Add(newToken);
 
         // Replace old refresh-token
         var result = oldToken.Replace(newToken.Id);
         if (result.IsFailure)
             return result.Error;
+
+        RefreshTokens.Add(newToken); // Add refresh-token to user
 
         return newTokenStr;
     }

@@ -36,15 +36,47 @@ public class RefreshToken : Entity
 
     internal Result Replace(Guid replacementTokenId)
     {
-        if (ReplacementTokenId is not null)
-            return Error.Conflict("Refresh-Token has been already replaced");
-        else if (RevokedAtUtc is not null)
-            return Error.Conflict("Refresh-Token has been revoked");
-        else if(ExpiresAtUtc < DateTime.UtcNow)
-            return Error.Conflict("Refresh-Token is expired");
+        // Validate token state
+        var validationResult = Validate();
+        if (validationResult.IsFailure)
+            return validationResult.Error;
 
+        // Replace
         ReplacementTokenId = replacementTokenId;
         RevokedAtUtc = DateTime.UtcNow;
         return Result.Success();
+    }
+
+    private Result Validate()
+    {
+        // Verify token has a replacement
+        if (ReplacementTokenId is not null)
+        {
+            // If the token already has a replacement then this can be a signal of a refresh token replay attack
+            // Therefore the whole token chain must be revoked immediately
+            RevokeChain();
+            return Error.Unauthorized("Cannot use a revoked and replaced refresh-token");
+        }
+
+        // Verify token is expired, if so then the user is unauthorized
+        if (ExpiresAtUtc <= DateTime.UtcNow)
+            return Error.Unauthorized("Refresh-token is expired");
+
+        // Verify token is revoked, if so then user is unauthorized
+        if (RevokedAtUtc is not null)
+            return Error.Unauthorized("Refresh-token is revoked");
+
+        return Result.Success();
+    }
+
+    private void RevokeChain()
+    {
+        var token = this;
+        token.RevokedAtUtc ??= DateTime.UtcNow;
+        while (token.ReplacementToken is not null)
+        {
+            token.ReplacementToken.RevokedAtUtc ??= DateTime.UtcNow;
+            token = token.ReplacementToken;
+        }
     }
 }

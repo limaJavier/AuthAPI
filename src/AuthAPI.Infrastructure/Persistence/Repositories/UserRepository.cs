@@ -1,5 +1,4 @@
 using AuthAPI.Application.Common.Interfaces.Repositories;
-using AuthAPI.Domain.Common.Results;
 using AuthAPI.Domain.UserAggregate;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +16,7 @@ public class UserRepository(AuthAPIDbContext dbContext) : IUserRepository
     public Task<User?> GetByEmailAsync(string email) =>
         _dbContext.Users
             .Include(user => user.RefreshTokens)
+                .ThenInclude(token => token.ReplacementToken)
             .FirstOrDefaultAsync(user =>
                 user.IsActive &&
                 user.Email == email
@@ -25,26 +25,20 @@ public class UserRepository(AuthAPIDbContext dbContext) : IUserRepository
     public Task<User?> GetByIdAsync(Guid id) =>
         _dbContext.Users
             .Include(user => user.RefreshTokens)
+                .ThenInclude(token => token.ReplacementToken)
             .FirstOrDefaultAsync(user =>
                 user.IsActive &&
                 user.Id == id
             );
 
-    public async Task<Result<User>> GetByRefreshTokenHashAsync(string refreshTokenHash)
+    public async Task<User?> GetByRefreshTokenHashAsync(string refreshTokenHash)
     {
         var token = await _dbContext.RefreshTokens
             .Include(token => token.User)
+                .ThenInclude(user => user.RefreshTokens)
+                    .ThenInclude(token => token.ReplacementToken)
             .FirstOrDefaultAsync(token => token.Hash == refreshTokenHash);
 
-        if (token is null)
-            return Error.NotFound($"Refresh-Token with hash {refreshTokenHash} was not found");
-        else if (token.RevokedAtUtc is not null)
-            return Error.Conflict($"Refresh-Token with hash {refreshTokenHash} is revoked");
-        else if (token.ExpiresAtUtc < DateTime.UtcNow)
-            return Error.Conflict($"Refresh-Token with hash {refreshTokenHash} is expired");
-        else if (!token.User.IsActive)
-            return Error.Conflict($"Refresh-Token with hash {refreshTokenHash} belongs to an inactive user");
-
-        return token.User;
+        return token?.User;
     }
 }
