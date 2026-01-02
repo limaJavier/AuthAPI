@@ -13,4 +13,15 @@ public class Hasher : IHasher
     {
         return BCrypt.Net.BCrypt.Verify(text, hash);
     }
+
+    public string HashDeterministic(string text)
+    {
+        var hashedBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text));
+        return Convert.ToBase64String(hashedBytes);
+    }
+
+    public bool VerifyDeterministic(string text, string hash)
+    {
+        return HashDeterministic(text) == hash;
+    }
 }

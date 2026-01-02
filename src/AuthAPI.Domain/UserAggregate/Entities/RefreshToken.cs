@@ -1,4 +1,5 @@
 using AuthAPI.Domain.Common;
+using AuthAPI.Domain.Common.Results;
 
 namespace AuthAPI.Domain.UserAggregate.Entities;
 
@@ -31,5 +32,19 @@ public class RefreshToken : Entity
         };
 
         return token;
+    }
+
+    internal Result Replace(Guid replacementTokenId)
+    {
+        if (ReplacementTokenId is not null)
+            return Error.Conflict("Refresh-Token has been already replaced");
+        else if (RevokedAtUtc is not null)
+            return Error.Conflict("Refresh-Token has been revoked");
+        else if(ExpiresAtUtc < DateTime.UtcNow)
+            return Error.Conflict("Refresh-Token is expired");
+
+        ReplacementTokenId = replacementTokenId;
+        RevokedAtUtc = DateTime.UtcNow;
+        return Result.Success();
     }
 }

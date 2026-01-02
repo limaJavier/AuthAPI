@@ -7,5 +7,6 @@ public static partial class Routes
         public const string Register = "/auth/register";
         public const string VerifyEmail = "/auth/verify-email";
         public const string Login = "/auth/login";
+        public const string Refresh = "/auth/refresh";
     }
 }

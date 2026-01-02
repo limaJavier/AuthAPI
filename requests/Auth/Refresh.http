@@ -1,0 +1,2 @@
+POST {{host}}/auth/refresh
+Cookie: refresh_token={{refreshToken}}

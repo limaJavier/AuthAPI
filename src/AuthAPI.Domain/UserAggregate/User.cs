@@ -61,12 +61,37 @@ public class User : AggregateRoot
         // Create token
         var refreshTokenStr = tokenGenerator.GenerateRandomToken();
         var refreshToken = RefreshToken.Create(
-            hash: hasher.Hash(refreshTokenStr),
+            hash: hasher.HashDeterministic(refreshTokenStr),
             expiresAtUtc: DateTime.UtcNow.AddDays(15),
             userId: Id
         );
         // Add token
         RefreshTokens.Add(refreshToken);
         return refreshTokenStr;
+    }
+
+    public Result<string> ReplaceRefreshToken(string refreshTokenStr, IHasher hasher, ITokenGenerator tokenGenerator)
+    {
+        // Get old refresh-token
+        var oldTokenHash = hasher.HashDeterministic(refreshTokenStr);
+        var oldToken = RefreshTokens.FirstOrDefault(token => token.Hash == oldTokenHash);
+        if (oldToken is null)
+            return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
+
+        // Add new refresh-token
+        var newTokenStr = tokenGenerator.GenerateRandomToken();
+        var newToken = RefreshToken.Create(
+            hash: hasher.HashDeterministic(newTokenStr),
+            expiresAtUtc: DateTime.UtcNow.AddDays(15),
+            userId: Id
+        );
+        RefreshTokens.Add(newToken);
+
+        // Replace old refresh-token
+        var result = oldToken.Replace(newToken.Id);
+        if (result.IsFailure)
+            return result.Error;
+
+        return newTokenStr;
     }
 }
