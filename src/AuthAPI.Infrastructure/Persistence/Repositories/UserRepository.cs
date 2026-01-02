@@ -16,10 +16,16 @@ public class UserRepository(AuthAPIDbContext dbContext) : IUserRepository
     public Task<User?> GetByEmailAsync(string email) =>
         _dbContext.Users
             .Include(user => user.RefreshTokens)
-            .FirstOrDefaultAsync(user => user.Email == email);
+            .FirstOrDefaultAsync(user =>
+                user.IsActive &&
+                user.Email == email
+            );
 
     public Task<User?> GetByIdAsync(Guid id) =>
         _dbContext.Users
             .Include(user => user.RefreshTokens)
-            .FirstOrDefaultAsync(user => user.Id == id);
+            .FirstOrDefaultAsync(user =>
+                user.IsActive &&
+                user.Id == id
+            );
 }

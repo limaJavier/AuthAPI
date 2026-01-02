@@ -1,3 +1,4 @@
+using AuthAPI.Api.Features.Auth.LoginWithEmail;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
 
@@ -12,6 +13,15 @@ public static class AuthRequestsFactory
     ) => new
     (
         Name: name,
+        Email: email,
+        Password: password
+    );
+
+    public static LoginWithEmailRequest CreateLoginRequest(
+        string email = Constants.User.Email,
+        string password = Constants.User.Password
+    ) => new
+    (
         Email: email,
         Password: password
     );

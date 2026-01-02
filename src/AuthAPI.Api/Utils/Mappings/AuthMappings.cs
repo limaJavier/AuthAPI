@@ -1,7 +1,9 @@
 using AuthAPI.Api.Features.Auth.Common.Responses;
+using AuthAPI.Api.Features.Auth.LoginWithEmail;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
 using AuthAPI.Application.Features.Auth.Commands.Common;
+using AuthAPI.Application.Features.Auth.Commands.LoginWithEmail;
 using AuthAPI.Application.Features.Auth.Commands.RegisterWithEmail;
 using AuthAPI.Application.Features.Auth.Commands.VerifyEmail;
 using Mapster;
@@ -15,6 +17,7 @@ public class AuthMappings : IRegister
         //** Requests mappings
         config.NewConfig<RegisterWithEmailRequest, RegisterWithEmailCommand>();
         config.NewConfig<VerifyEmailRequest, VerifyEmailCommand>();
+        config.NewConfig<LoginWithEmailRequest, LoginWithEmailCommand>();
 
 
         //** Responses mappings

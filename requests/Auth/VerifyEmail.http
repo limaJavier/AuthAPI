@@ -1,0 +1,7 @@
+POST {{host}}/auth/verify-email
+Content-Type: application/json
+
+{
+    "verificationToken": "",
+    "verificationCode": ""
+}

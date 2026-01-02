@@ -1,6 +1,6 @@
-@email=julia@mail.com
+@email=john@mail.com
 @verificationToken= {{register.response.body.verificationToken}}
-@verificationCode=t+XFU6yXnMY=
+@verificationCode=8airCkB4HKE=
 # @accessToken= {{verify.response.body.accessToken}}
 # @refreshToken= {{verify.response.headers.Set-Cookie}}
 
