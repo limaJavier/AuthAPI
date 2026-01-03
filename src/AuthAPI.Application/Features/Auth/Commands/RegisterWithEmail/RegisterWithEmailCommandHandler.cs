@@ -1,7 +1,7 @@
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Application.Common.Interfaces.Repositories;
 using AuthAPI.Application.Features.Auth.Commands.Common;
-using AuthAPI.Application.Features.Auth.Events.UserRegistered;
+using AuthAPI.Application.Features.Auth.Events.Verification;
 using AuthAPI.Domain.Common.Interfaces;
 using AuthAPI.Domain.Common.Results;
 using AuthAPI.Domain.UserAggregate;
@@ -46,7 +46,7 @@ public class RegisterWithEmailCommandHandler(
 
         await _unitOfWork.CommitAsync();
 
-        await _applicationEventQueue.PushAsync(new UserRegisteredEvent(verificationToken));
+        await _applicationEventQueue.PushAsync(new VerificationEvent(verificationToken, VerificationEventType.Email));
 
         return new VerificationResult(verificationToken);
     }

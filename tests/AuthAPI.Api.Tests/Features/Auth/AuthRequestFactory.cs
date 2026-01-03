@@ -1,3 +1,4 @@
+using AuthAPI.Api.Features.Auth.ForgotPassword;
 using AuthAPI.Api.Features.Auth.LoginWithEmail;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
@@ -24,5 +25,12 @@ public static class AuthRequestsFactory
     (
         Email: email,
         Password: password
+    );
+
+    public static ForgotPasswordRequest CreateForgotPasswordRequest(
+        string email = Constants.User.Email
+    ) => new
+    (
+        Email: email
     );
 }

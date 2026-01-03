@@ -9,5 +9,6 @@ public static partial class Routes
         public const string Login = "/auth/login";
         public const string Refresh = "/auth/refresh";
         public const string Logout = "/auth/logout";
+        public const string ForgotPassword = "/auth/forgot-password";
     }
 }
