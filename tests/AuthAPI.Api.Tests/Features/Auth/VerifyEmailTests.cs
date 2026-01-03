@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using AuthAPI.Api.Features.Auth.Common.Responses;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
-using AuthAPI.Api.Tests.Features.Common;
 using AuthAPI.Api.Tests.Features.Common.Flows;
 using AuthAPI.Api.Tests.Features.Utils;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
@@ -50,7 +49,7 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
     }
 
     [Fact]
-    public async Task WhenEmailWasAlreadyVerified_ShouldReturnConflict()
+    public async Task WhenEmailWasAlreadyVerified_ShouldReturnUnauthorized()
     {
         //** Arrange
         var (verificationToken, verificationCode) = await _authFlows.RegisterAsync(); // Register user
@@ -65,11 +64,11 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
         var httpResponse = await _client.SendAsync(HttpMethod.Post, Routes.Auth.VerifyEmail, request); // Verify again
 
         //** Assert
-        Assert.Equal(HttpStatusCode.Conflict, httpResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
     }
 
     [Fact]
-    public async Task WhenVerificationTokenIsInvalid_ShouldReturnConflict()
+    public async Task WhenVerificationTokenIsInvalid_ShouldReturnUnauthorized()
     {
         //** Arrange
         var (_, verificationCode) = await _authFlows.RegisterAsync(); // Register user
@@ -83,7 +82,7 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
         var httpResponse = await _client.SendAsync(HttpMethod.Post, Routes.Auth.VerifyEmail, request);
 
         //** Assert
-        Assert.Equal(HttpStatusCode.Conflict, httpResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
     }
 
     [Fact]

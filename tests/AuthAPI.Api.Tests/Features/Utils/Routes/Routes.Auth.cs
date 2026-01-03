@@ -10,5 +10,6 @@ public static partial class Routes
         public const string Refresh = "/auth/refresh";
         public const string Logout = "/auth/logout";
         public const string ForgotPassword = "/auth/forgot-password";
+        public const string VerifyRecoveryCode = "/auth/verify-recovery-code";        
     }
 }

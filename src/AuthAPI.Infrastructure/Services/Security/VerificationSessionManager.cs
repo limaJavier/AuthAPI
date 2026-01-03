@@ -46,7 +46,7 @@ public class VerificationSessionManager(ITokenGenerator tokenGenerator) : IVerif
         return token;
     }
 
-    public async Task UpdateSession(VerificationSession session)
+    public async Task UpdateSessionAsync(VerificationSession session)
     {
         await Task.CompletedTask;
 
@@ -61,7 +61,7 @@ public class VerificationSessionManager(ITokenGenerator tokenGenerator) : IVerif
         }
     }
 
-    public async Task RemoveSession(string token)
+    public async Task RemoveSessionAsync(string token)
     {
         await Task.CompletedTask;
 

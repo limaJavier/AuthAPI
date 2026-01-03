@@ -1,10 +1,10 @@
 using FluentValidation;
 
-namespace AuthAPI.Application.Features.Auth.Commands.VerifyEmail;
+namespace AuthAPI.Application.Features.Auth.Commands.VerifyRecoveryCode;
 
-public class VerifyEmailCommandValidator : AbstractValidator<VerifyEmailCommand>
+public class VerifyRecoveryCodeCommandValidator : AbstractValidator<VerifyRecoveryCodeCommand>
 {
-    public VerifyEmailCommandValidator()
+    public VerifyRecoveryCodeCommandValidator()
     {
         RuleFor(x => x.VerificationToken)
             .NotEmpty()

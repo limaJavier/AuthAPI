@@ -27,7 +27,7 @@ public class VerifyEmailCommandHandler(
         var session = await _verificationSessionManager.GetSessionAsync(command.VerificationToken);
 
         if (session is null)
-            return Error.Conflict($"Verification-Session with token {command.VerificationToken} does not exist");
+            return Error.Unauthorized($"Verification-Session with token {command.VerificationToken} does not exist");
 
         var verificationResult = session.Verify(command.VerificationCode);
 
@@ -49,6 +49,8 @@ public class VerifyEmailCommandHandler(
             user.Id,
             user.Email
         ));
+
+        await _verificationSessionManager.RemoveSessionAsync(session.Token); // Remove verification session
 
         await _unitOfWork.CommitAsync();
 

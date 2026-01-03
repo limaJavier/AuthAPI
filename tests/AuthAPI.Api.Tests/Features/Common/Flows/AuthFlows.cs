@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using AuthAPI.Api.Features.Auth.Common.Responses;
+using AuthAPI.Api.Features.Auth.ForgotPassword;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
 using AuthAPI.Api.Tests.Features.Utils;
@@ -60,6 +61,17 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
     {
         var (verificationToken, verificationCode) = await RegisterAsync(name, email, password); // Register user
         return await VerifyEmailAsync(verificationToken, verificationCode); // Verify user
+    }
+
+    public async Task<(string VerificationToken, string VerificationCode)> ForgotPasswordAsync(string email = Constants.User.Email)
+    {
+        var request = new ForgotPasswordRequest(email);
+
+        var response = await _client.SendAsync<VerificationResponse>(HttpMethod.Post, Routes.Auth.ForgotPassword, request);
+
+        var verificationCode = await GetVerificationCodeAsync(response.VerificationToken);
+
+        return (response.VerificationToken, verificationCode);
     }
 
     public static string ExtractTokenFromCookie(string cookie, string tokenName = "refresh_token")
