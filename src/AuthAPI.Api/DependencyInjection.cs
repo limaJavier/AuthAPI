@@ -1,4 +1,5 @@
 using System.Text;
+using AuthAPI.Infrastructure.Settings;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using Mapster;
@@ -10,15 +11,15 @@ namespace AuthAPI.Api;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddAuth();
-        
+        services.AddAuth(configuration);
+
         services.AddFastEndpoints()
             .SwaggerDocument();
 
         services.AddMappings();
-        
+
         return services;
     }
 
@@ -33,8 +34,14 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddAuth(this IServiceCollection services)
+    private static IServiceCollection AddAuth(this IServiceCollection services, IConfiguration configuration)
     {
+        // Resolve jtw-settings
+        var jwtSettings = configuration.GetRequiredSection(nameof(JwtSettings)).Get<JwtSettings>()
+            ?? throw new Exception("Cannot resolve JwtSettings");
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)); // Generate symmetric security key
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -48,9 +55,9 @@ public static class DependencyInjection
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
 
-                ValidIssuer = "api.auth",
-                ValidAudience = "api",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("An at least 256 bits signing key")), // TODO: Save credential info in a secure place
+                ValidIssuer = jwtSettings.Issuer,
+                ValidAudience = jwtSettings.Audience,
+                IssuerSigningKey = securityKey,
             };
         });
 

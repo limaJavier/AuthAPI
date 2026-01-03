@@ -1,8 +1,8 @@
 @email=john@mail.com
 @verificationToken= {{register.response.body.verificationToken}}
 @verificationCode=8airCkB4HKE=
-# @accessToken= {{verify.response.body.accessToken}}
-# @refreshToken= {{verify.response.headers.Set-Cookie}}
+@accessToken= {{verify.response.body.accessToken}}
+@refreshToken= {{verify.response.headers.Set-Cookie}}
 
 
 ### Register
@@ -27,3 +27,10 @@ Content-Type: application/json
     "verificationToken": "{{verificationToken}}",
     "verificationCode": "{{verificationCode}}"
 }
+
+### Logout
+# @name logout
+
+POST {{host}}/auth/logout
+Cookie: refresh_toke={{refreshToken}}
+Authorization: Bearer {{accessToken}}

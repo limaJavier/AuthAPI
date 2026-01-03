@@ -1,0 +1,3 @@
+POST {{host}}/auth/logout
+Cookie: refresh_token={{refreshToken}}
+Authorization: Bearer {{accessToken}}

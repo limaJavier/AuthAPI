@@ -1,0 +1,21 @@
+@email=john@mail.com
+@accessToken= {{login.response.body.accessToken}}
+@refreshTokenCookie= {{login.response.headers.Set-Cookie}}
+
+### Login
+# @name login
+
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "Password0;"
+}
+
+### Logout
+# @name logout
+
+POST {{host}}/auth/logout
+Cookie: {{refreshTokenCookie}}
+Authorization: Bearer {{accessToken}}

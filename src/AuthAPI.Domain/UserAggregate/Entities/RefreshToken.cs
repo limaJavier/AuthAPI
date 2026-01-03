@@ -47,6 +47,17 @@ public class RefreshToken : Entity
         return Result.Success();
     }
 
+    internal Result Revoke()
+    {
+        // Validate token state
+        var validationResult = Validate();
+        if (validationResult.IsFailure)
+            return validationResult.Error;
+
+        RevokedAtUtc = DateTime.UtcNow;
+        return Result.Success();
+    }
+
     private Result Validate()
     {
         // Verify token has a replacement

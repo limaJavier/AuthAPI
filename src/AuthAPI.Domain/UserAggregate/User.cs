@@ -95,4 +95,14 @@ public class User : AggregateRoot
 
         return newTokenStr;
     }
+
+    public Result RevokeRefreshToken(string refreshTokenStr, IHasher hasher)
+    {
+        var tokenHash = hasher.HashDeterministic(refreshTokenStr);
+        var token = RefreshTokens.FirstOrDefault(token => token.Hash == tokenHash);
+        if (token is null)
+            return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
+
+        return token.Revoke();
+    }
 }

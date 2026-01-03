@@ -1,0 +1,30 @@
+using AuthAPI.Api.Exceptions;
+using AuthAPI.Api.Utils.Extensions;
+using AuthAPI.Application.Features.Auth.Commands.Logout;
+using FastEndpoints;
+using Mediator;
+
+namespace AuthAPI.Api.Features.Auth.Logout;
+
+public class LogoutEndpoint(ISender sender) : EndpointWithoutRequest
+{
+    private readonly ISender _sender = sender;
+
+    public override void Configure()
+    {
+        Post("/auth/logout");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var refreshToken = HttpContext.GetRefreshToken()
+            ?? throw ApiException.Unauthorized("Cannot resolve refresh_token cookie");
+
+        var command = new LogoutCommand(refreshToken);
+        var result = await _sender.Send(command);
+        if (result.IsFailure)
+            throw ApiException.FromError(result.Error);
+
+        await Send.OkAsync();
+    }
+}
