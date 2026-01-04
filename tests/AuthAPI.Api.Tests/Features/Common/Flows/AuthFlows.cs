@@ -3,6 +3,7 @@ using AuthAPI.Api.Features.Auth.Common.Responses;
 using AuthAPI.Api.Features.Auth.ForgotPassword;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
+using AuthAPI.Api.Features.Auth.VerifyRecoveryCode;
 using AuthAPI.Api.Tests.Features.Utils;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
 using AuthAPI.Api.Tests.Features.Utils.Routes;
@@ -72,6 +73,12 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
         var verificationCode = await GetVerificationCodeAsync(response.VerificationToken);
 
         return (response.VerificationToken, verificationCode);
+    }
+
+    public async Task VerifyRecoveryCodeAsync(string verificationToken, string verificationCode)
+    {
+        var request = new VerifyRecoveryCodeRequest(verificationToken, verificationCode);
+        await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.VerifyRecoveryCode, request);
     }
 
     public static string ExtractTokenFromCookie(string cookie, string tokenName = "refresh_token")

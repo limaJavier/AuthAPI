@@ -7,6 +7,7 @@ using AuthAPI.Api.Tests.Features.Utils;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
 using AuthAPI.Api.Tests.Features.Utils.Routes;
 using AuthAPI.Api.Tests.Fixtures;
+using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Domain.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,7 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
 
         // Resolve dependencies
         var hasher = _serviceProvider.GetRequiredService<IHasher>();
+        var verificationSessionManager = _serviceProvider.GetRequiredService<IVerificationSessionManager>();
 
         //** Act
         var httpResponse = await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.VerifyEmail, request);
@@ -41,11 +43,14 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
             .Include(user => user.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
+        var session = await verificationSessionManager.GetSessionAsync(verificationToken);
+
         //** Assert
         Assert.NotNull(refreshTokenHeader);
         Assert.NotEmpty(refreshTokenHeader);
         Assert.NotEmpty(response.AccessToken);
         Assert.Contains(user.RefreshTokens, token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash));
+        Assert.Null(session); // Session was removed
     }
 
     [Fact]

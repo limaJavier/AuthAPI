@@ -1,9 +1,11 @@
+using AuthAPI.Api.Features.Auth.ChangeForgottenPassword;
 using AuthAPI.Api.Features.Auth.Common.Responses;
 using AuthAPI.Api.Features.Auth.ForgotPassword;
 using AuthAPI.Api.Features.Auth.LoginWithEmail;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
 using AuthAPI.Api.Features.Auth.VerifyRecoveryCode;
+using AuthAPI.Application.Features.Auth.Commands.ChangeForgottenPassword;
 using AuthAPI.Application.Features.Auth.Commands.Common;
 using AuthAPI.Application.Features.Auth.Commands.ForgotPassword;
 using AuthAPI.Application.Features.Auth.Commands.LoginWithEmail;
@@ -23,6 +25,7 @@ public class AuthMappings : IRegister
         config.NewConfig<LoginWithEmailRequest, LoginWithEmailCommand>();
         config.NewConfig<ForgotPasswordRequest, ForgotPasswordCommand>();
         config.NewConfig<VerifyRecoveryCodeRequest, VerifyRecoveryCodeRequest>();
+        config.NewConfig<ChangeForgottenPasswordRequest, ChangeForgottenPasswordCommand>();
 
         //** Responses mappings
         config.NewConfig<VerificationResult, VerificationResponse>();

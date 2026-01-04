@@ -1,0 +1,7 @@
+POST {{host}}/auth/verify-recovery-code
+Content-Type: application/json
+
+{
+    "verificationToken": "",
+    "verificationCode": ""
+}

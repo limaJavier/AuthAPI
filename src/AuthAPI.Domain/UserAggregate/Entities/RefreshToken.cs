@@ -58,6 +58,11 @@ public class RefreshToken : Entity
         return Result.Success();
     }
 
+    internal void RevokeWithoutValidation()
+    {
+        RevokedAtUtc ??= DateTime.UtcNow;
+    }
+
     private Result Validate()
     {
         // Verify token has a replacement

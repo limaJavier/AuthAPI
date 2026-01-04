@@ -48,6 +48,15 @@ public class User : AggregateRoot
             return Error.Conflict("Wrong password");
     }
 
+    public Result ChangePassword(string password, IHasher hasher)
+    {
+        if (PasswordHash is null)
+            return Error.Conflict("User does not have a password");
+
+        PasswordHash = hasher.Hash(password);
+        return Result.Success();
+    }
+
     public Result Verify()
     {
         if (IsVerified)
@@ -104,5 +113,11 @@ public class User : AggregateRoot
             return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
 
         return token.Revoke();
+    }
+
+    public void RevokeAllRefreshTokens()
+    {
+        foreach (var token in RefreshTokens)
+            token.RevokeWithoutValidation();
     }
 }
