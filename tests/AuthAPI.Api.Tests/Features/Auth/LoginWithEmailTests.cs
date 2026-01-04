@@ -90,34 +90,20 @@ public class LoginWithEmailTests(ITestOutputHelper output, PostgresContainerFixt
 
     [Theory]
     [MemberData(nameof(BadLoginWithEmailRequests))]
-    public async Task WhenRequestIsBad_ShouldReturnBadRequest(LoginWithEmailRequest request)
-    {
-        //** Act
-        var httpResponse = await _client.SendAsync(
-            method: HttpMethod.Post,
-            route: Routes.Auth.Register,
-            body: request
+    public Task WhenRequestIsBad_ShouldReturnBadRequest(LoginWithEmailRequest request)
+        => CommonTestMethods.WhenRequestIsBad_ShouldReturnBadRequest(
+            _client,
+            HttpMethod.Post,
+            Routes.Auth.Login,
+            request
         );
-
-        //** Assert
-        Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);
-    }
 
     public static IEnumerable<object[]> BadLoginWithEmailRequests()
     {
-        yield return [AuthRequestsFactory.CreateLoginRequest(email: "")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: "")];
+        foreach (var badEmail in Constants.User.BadEmails)
+            yield return [AuthRequestsFactory.CreateLoginRequest(email: badEmail)];
 
-        yield return [AuthRequestsFactory.CreateLoginRequest(email: "missingatsign.com")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(email: "missingdomain@")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(email: "@missingusername.com")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(email: "toolong" + new string('a', 250) + "@example.com")];
-
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: "short1!")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: "alllowercase1!")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: "ALLUPPERCASE1!")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: "NoDigits!")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: "NoSpecialChar1")];
-        yield return [AuthRequestsFactory.CreateLoginRequest(password: new string('a', 256) + "A1!")];
+        foreach (var badPassword in Constants.User.BadPasswords)
+            yield return [AuthRequestsFactory.CreateLoginRequest(password: badPassword)];
     }
 }

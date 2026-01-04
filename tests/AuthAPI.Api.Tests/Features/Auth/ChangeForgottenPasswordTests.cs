@@ -6,6 +6,7 @@ using AuthAPI.Api.Tests.Features.Utils.Routes;
 using AuthAPI.Api.Tests.Fixtures;
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Domain.Common.Interfaces;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -33,9 +34,9 @@ public class ChangeForgottenPasswordTests(ITestOutputHelper output, PostgresCont
         //** Act
         await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.ChangeForgottenPassword, request);
 
-        var user = (await _dbContext.Users
+        var user = await _dbContext.Users
             .Include(user => user.RefreshTokens)
-            .FirstOrDefaultAsync(user => user.Email == Constants.User.Email))!;
+            .FirstAsync(user => user.Email == Constants.User.Email);
 
         var session = await verificationSessionManager.GetSessionAsync(verificationToken);
 
@@ -79,28 +80,18 @@ public class ChangeForgottenPasswordTests(ITestOutputHelper output, PostgresCont
 
     [Theory]
     [MemberData(nameof(BadChangeForgottenPasswordRequests))]
-    public async Task WhenRequestIsBad_ShouldReturnBadRequest(ChangeForgottenPasswordRequest request)
-    {
-        //** Act
-        var httpResponse = await _client.SendAsync(
-            method: HttpMethod.Post,
-            route: Routes.Auth.Register,
-            body: request
+    public Task WhenRequestIsBad_ShouldReturnBadRequest(ChangeForgottenPasswordRequest request) =>
+        CommonTestMethods.WhenRequestIsBad_ShouldReturnBadRequest(
+            _client,
+            HttpMethod.Post,
+            Routes.Auth.ChangeForgottenPassword,
+            request
         );
-
-        //** Assert
-        Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);
-    }
 
     public static IEnumerable<object[]> BadChangeForgottenPasswordRequests()
     {
         yield return [new ChangeForgottenPasswordRequest(VerificationToken: "", Password: Constants.User.Password)];
-
-        yield return [new ChangeForgottenPasswordRequest(VerificationToken: "Token", Password: "short1!")];
-        yield return [new ChangeForgottenPasswordRequest(VerificationToken: "Token", Password: "alllowercase1!")];
-        yield return [new ChangeForgottenPasswordRequest(VerificationToken: "Token", Password: "ALLUPPERCASE1!")];
-        yield return [new ChangeForgottenPasswordRequest(VerificationToken: "Token", Password: "NoDigits!")];
-        yield return [new ChangeForgottenPasswordRequest(VerificationToken: "Token", Password: "NoSpecialChar1")];
-        yield return [new ChangeForgottenPasswordRequest(VerificationToken: "Token", Password: new string('a', 256) + "A1!")];
+        foreach (var badPassword in Constants.User.BadPasswords)
+            yield return [new ChangeForgottenPasswordRequest(VerificationToken: "VerificationToken", Password: badPassword)];
     }
 }

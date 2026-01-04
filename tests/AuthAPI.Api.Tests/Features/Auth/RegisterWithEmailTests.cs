@@ -3,6 +3,7 @@ using AuthAPI.Api.Features.Auth.Common.Responses;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Tests.Features.Common;
 using AuthAPI.Api.Tests.Features.Utils;
+using AuthAPI.Api.Tests.Features.Utils.Constants;
 using AuthAPI.Api.Tests.Features.Utils.Routes;
 using AuthAPI.Api.Tests.Fixtures;
 using AuthAPI.Domain.Common.Interfaces;
@@ -70,35 +71,22 @@ public class RegisterWithEmailTests(ITestOutputHelper output, PostgresContainerF
 
     [Theory]
     [MemberData(nameof(BadRegisterWithEmailRequests))]
-    public async Task WhenRequestIsBad_ShouldReturnBadRequest(RegisterWithEmailRequest request)
-    {
-        //** Act
-        var httpResponse = await _client.SendAsync(
-            method: HttpMethod.Post,
-            route: Routes.Auth.Register,
-            body: request
+    public Task WhenRequestIsBad_ShouldReturnBadRequest(RegisterWithEmailRequest request) =>
+        CommonTestMethods.WhenRequestIsBad_ShouldReturnBadRequest(
+            _client,
+            HttpMethod.Post,
+            Routes.Auth.Register,
+            request
         );
-
-        //** Assert
-        Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);
-    }
 
     public static IEnumerable<object[]> BadRegisterWithEmailRequests()
     {
         yield return [AuthRequestsFactory.CreateRegisterRequest(name: "")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(email: "")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: "")];
 
-        yield return [AuthRequestsFactory.CreateRegisterRequest(email: "missingatsign.com")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(email: "missingdomain@")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(email: "@missingusername.com")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(email: "toolong" + new string('a', 250) + "@example.com")];
+        foreach (var badEmail in Constants.User.BadEmails)
+            yield return [AuthRequestsFactory.CreateRegisterRequest(email: badEmail)];
 
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: "short1!")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: "alllowercase1!")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: "ALLUPPERCASE1!")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: "NoDigits!")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: "NoSpecialChar1")];
-        yield return [AuthRequestsFactory.CreateRegisterRequest(password: new string('a', 256) + "A1!")];
+        foreach (var badPassword in Constants.User.BadPasswords)
+            yield return [AuthRequestsFactory.CreateRegisterRequest(password: badPassword)];
     }
 }

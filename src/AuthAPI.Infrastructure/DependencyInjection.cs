@@ -26,6 +26,7 @@ public static class DependencyInjection
             serviceProvider.GetRequiredService<AuthAPIDbContext>());
         services.AddScoped<IUserRepository, UserRepository>();
 
+        services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IApplicationEventQueue, ApplicationEventQueue>();
         services.AddSingleton<IHasher, Hasher>();
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
@@ -46,7 +47,7 @@ public static class DependencyInjection
         // services.Configure<EmailSettings>(
         //     configuration.GetSection(nameof(EmailSettings))
         // );
-        
+
         return services;
     }
 }

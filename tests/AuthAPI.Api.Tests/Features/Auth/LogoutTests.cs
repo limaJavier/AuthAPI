@@ -103,19 +103,10 @@ public class LogoutTests(ITestOutputHelper output, PostgresContainerFixture post
     }
 
     [Fact]
-    public async Task WhenAccessTokenIsMissing_ShouldReturnUnauthorized()
-    {
-        //** Arrange
-        var (_, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync();
-
-        //** Act
-        var httpResponse = await _client.SendAsync(
-            method: HttpMethod.Post,
-            route: Routes.Auth.Logout,
-            refreshToken: refreshTokenStr
+    public Task WhenAccessTokenIsMissing_ShouldReturnUnauthorized() =>
+        CommonTestMethods.WhenAccessTokenIsMissing_ShouldReturnUnauthorized(
+            _client,
+            HttpMethod.Post,
+            Routes.Auth.Logout
         );
-
-        //** Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
-    }
 }
