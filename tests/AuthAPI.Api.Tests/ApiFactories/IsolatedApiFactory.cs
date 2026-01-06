@@ -1,4 +1,3 @@
-using AuthAPI.Api.Tests;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 

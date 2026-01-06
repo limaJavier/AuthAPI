@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace AuthAPI.Api.Tests.Features.Common;
 
-public class ResetTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public abstract class ResetTests : IClassFixture<ApiFactory>, IAsyncLifetime
 {
     protected readonly ITestOutputHelper _output;
     protected readonly HttpClient _client;

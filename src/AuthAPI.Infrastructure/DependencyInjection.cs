@@ -4,6 +4,7 @@ using AuthAPI.Domain.Common.Interfaces;
 using AuthAPI.Infrastructure.Persistence;
 using AuthAPI.Infrastructure.Persistence.Repositories;
 using AuthAPI.Infrastructure.Services;
+using AuthAPI.Infrastructure.Services.Background;
 using AuthAPI.Infrastructure.Services.Security;
 using AuthAPI.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,8 @@ public static class DependencyInjection
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
         services.AddSingleton<IVerificationSessionManager, VerificationSessionManager>();
         services.AddSingleton<IEmailSender, EmailSender>();
+
+        services.AddHostedService<ExpiredUnverifiedUserCleanupService>();
 
         services.AddSettings(configuration);
 
