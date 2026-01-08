@@ -33,9 +33,9 @@ public static class GlobalExceptionHandler
             );
 
             IResult response;
-            if (exception is ApiException zasException)
+            if (exception is ApiException apiException)
             {
-                HttpStatusCode statusCode = zasException.Type switch
+                HttpStatusCode statusCode = apiException.Type switch
                 {
                     ErrorType.Unexpected => HttpStatusCode.InternalServerError,
                     ErrorType.Validation => HttpStatusCode.BadRequest,
@@ -46,16 +46,16 @@ public static class GlobalExceptionHandler
                     _ => HttpStatusCode.InternalServerError
                 };
 
-                response = zasException.Message == string.Empty ?
+                response = apiException.Message == string.Empty ?
                     Results.Problem(statusCode: (int)statusCode) :
-                    zasException.Detail == string.Empty ?
+                    apiException.Detail is null ?
                         Results.Problem(
-                            title: zasException.Message,
+                            title: apiException.Message,
                             statusCode: (int)statusCode) :
                         Results.Problem(
-                            title: zasException.Message,
+                            title: apiException.Message,
                             statusCode: (int)statusCode,
-                            detail: zasException.Detail);
+                            detail: apiException.Detail);
             }
             else
             {

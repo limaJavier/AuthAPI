@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AuthAPI.Domain.Common.Results;
 using FluentValidation;
 using Mediator;
@@ -19,8 +20,16 @@ public class ValidationBehavior<TRequest, TResponse>(IValidator<TRequest> valida
             return await next(request, cancellationToken);
         }
 
-        var errorMessage = string.Join("; ", validationResult.Errors.Select(error => error.ErrorMessage));
+        var errors = new Dictionary<string, List<string>>();
+        foreach (var error in validationResult.Errors)
+        {
+            if (errors.ContainsKey(error.PropertyName))
+                errors[error.PropertyName].Add(error.ErrorMessage);
+            else
+                errors.Add(error.PropertyName, [error.ErrorMessage]);
+        }
+        var errorsJson = JsonSerializer.Serialize(errors);
 
-        return (dynamic)Error.Validation(errorMessage);
+        return (dynamic)Error.Validation("A validation error occurred", errorsJson);
     }
 }

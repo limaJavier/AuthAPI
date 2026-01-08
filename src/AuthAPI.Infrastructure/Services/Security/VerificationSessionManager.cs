@@ -30,7 +30,7 @@ public class VerificationSessionManager(ITokenGenerator tokenGenerator) : IVerif
         await Task.CompletedTask;
 
         var token = _tokenGenerator.GenerateRandomToken(32);
-        var code = _tokenGenerator.GenerateRandomToken(8);
+        var code = Random.Shared.Next(100000, 999999).ToString(); // Generate a 6 digits string
 
         lock (_lock)
         {

@@ -9,6 +9,7 @@ public static class Pipeline
     public static IApplicationBuilder AddPresentation(this IApplicationBuilder app)
     {
         app.UseExceptionHandler(app => app.Run(GlobalExceptionHandler.Handle));
+        app.UseCors();
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
