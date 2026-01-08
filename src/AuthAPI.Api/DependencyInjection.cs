@@ -13,12 +13,23 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddCors(configuration);
+        services.AddAuth(configuration);
+        services.AddFastEndpoints()
+            .SwaggerDocument();
+        services.AddMappings();
+
+        return services;
+    }
+
+    private static IServiceCollection AddCors(this IServiceCollection services, IConfiguration configuration)
+    {
         // Load the origins from appsettings.json
         var allowedOrigins = configuration
             .GetSection("CorsSettings:AllowedOrigins")
             .Get<string[]>()
             ?? throw new Exception("Cannot resolve the CORS allowed origins");
-        if(allowedOrigins.Length == 0)
+        if (allowedOrigins.Length == 0)
             throw new Exception("There are no CORS allowed origins");
 
         services.AddCors(options =>
@@ -32,13 +43,6 @@ public static class DependencyInjection
                     .AllowCredentials();
             });
         });
-
-        services.AddAuth(configuration);
-
-        services.AddFastEndpoints()
-            .SwaggerDocument();
-
-        services.AddMappings();
 
         return services;
     }
