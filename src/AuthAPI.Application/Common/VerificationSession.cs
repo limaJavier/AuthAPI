@@ -21,7 +21,7 @@ public class VerificationSession(
             return Error.Conflict("Session is already verified");
 
         if (code != Code)
-            return Error.Conflict("Session-code is wrong");
+            return Error.Conflict("Verification-Code is wrong");
 
         IsVerified = true;
         return Result.Success();
