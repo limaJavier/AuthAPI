@@ -23,15 +23,19 @@ public static class HttpContextExtensions
 
     public static void AddRefreshToken(this HttpContext httpContext, string refreshToken)
     {
-        // TODO: Avoid hardcode expiry date
-        var options = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTimeOffset.UtcNow.AddMonths(1)
-        };
-
-        httpContext.Response.Cookies.Append(RefreshTokenKey, refreshToken, options);
+        httpContext.Response.Cookies.Append(RefreshTokenKey, refreshToken, GetRefreshTokenCookieOptions());
     }
+
+    public static void RemoveRefreshToken(this HttpContext httpContext)
+    {
+        httpContext.Response.Cookies.Delete(RefreshTokenKey, GetRefreshTokenCookieOptions());
+    }
+
+    private static CookieOptions GetRefreshTokenCookieOptions() => new()
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.None,
+        Expires = DateTimeOffset.UtcNow.AddMonths(1) // TODO: Avoid hardcode expiry date
+    };
 }

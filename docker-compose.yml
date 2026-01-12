@@ -10,7 +10,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      ASPNETCORE_HTTP_PORTS: 8080
+      ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__AuthAPI: "Host=db;Port=5432;Database=AuthAPI;Username=postgres;Password=password"
     ports:
       - "8080:8080"
