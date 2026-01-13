@@ -1,4 +1,5 @@
 using System.Net;
+using AuthAPI.Api.Tests.Features.Common.Flows;
 using AuthAPI.Api.Tests.Features.Utils;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
 using AuthAPI.Api.Tests.Features.Utils.Routes;
@@ -22,12 +23,15 @@ public class LogoutTests(ITestOutputHelper output, PostgresContainerFixture post
         var hasher = _serviceProvider.GetRequiredService<IHasher>();
 
         //** Act
-        await _client.SendAndEnsureSuccessAsync(
+        var httpResponse = await _client.SendAndEnsureSuccessAsync(
             method: HttpMethod.Post,
             route: Routes.Auth.Logout,
             accessToken: accessToken,
             refreshToken: refreshTokenStr
         );
+
+        var newRefreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
+        var newRefreshTokenStr = AuthFlows.ExtractTokenFromCookie(newRefreshTokenHeader);
 
         var user = await _dbContext.Users
             .Include(user => user.RefreshTokens)
@@ -37,6 +41,7 @@ public class LogoutTests(ITestOutputHelper output, PostgresContainerFixture post
 
         //** Assert
         Assert.NotNull(refreshToken.RevokedAtUtc); // Token was revoked
+        Assert.Empty(newRefreshTokenStr); // New refresh token should be empty (it must be removed)
     }
 
     [Fact]

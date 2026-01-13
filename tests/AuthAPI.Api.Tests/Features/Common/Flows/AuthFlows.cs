@@ -81,6 +81,16 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
         await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.VerifyRecoveryCode, request);
     }
 
+    public async Task LogoutAsync(string accessToken, string refreshToken)
+    {
+        await _client.SendAndEnsureSuccessAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.Logout,
+            accessToken: accessToken,
+            refreshToken: refreshToken
+        );
+    }
+
     public static string ExtractTokenFromCookie(string cookie, string tokenName = "refresh_token")
     {
         var parts = cookie.Split(';');
