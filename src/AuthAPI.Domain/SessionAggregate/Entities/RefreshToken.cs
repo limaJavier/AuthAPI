@@ -40,4 +40,6 @@ public class RefreshToken : Entity
         RevokedAtUtc = DateTime.UtcNow;
         return Result.Success();
     }
+
+    internal bool IsExpired() => ExpiresAtUtc <= DateTime.UtcNow;
 }

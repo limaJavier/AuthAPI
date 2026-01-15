@@ -67,7 +67,7 @@ public class Session : Entity
         {
             return Error.Unauthorized($"Refresh-token {refreshTokenStr} does not exist");
         }
-        else if (refreshToken.RevokedAtUtc is not null) // A revoked token is being used (this can be a replay attack)
+        else if (refreshToken.RevokedAtUtc is not null || refreshToken.IsExpired()) // A revoked or expired token is being used (this can be a replay attack)
         {
             // Close the session
             var closingResult = Close();
