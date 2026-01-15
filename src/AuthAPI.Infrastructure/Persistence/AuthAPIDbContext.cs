@@ -1,5 +1,8 @@
+using System.Diagnostics.Eventing.Reader;
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Domain.Common;
+using AuthAPI.Domain.SessionAggregate;
+using AuthAPI.Domain.SessionAggregate.Entities;
 using AuthAPI.Domain.UserAggregate;
 using AuthAPI.Domain.UserAggregate.Entities;
 using AuthAPI.Infrastructure.Middlewares;
@@ -13,6 +16,8 @@ namespace AuthAPI.Infrastructure.Persistence;
 public class AuthAPIDbContext(DbContextOptions<AuthAPIDbContext> options, IHttpContextAccessor httpContextAccessor, IPublisher publisher) : DbContext(options), IUnitOfWork
 {
     public DbSet<User> Users { get; set; }
+    public DbSet<Credential> Credentials { get; set; }
+    public DbSet<Session> Sessions { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;

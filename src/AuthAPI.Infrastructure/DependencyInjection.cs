@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(serviceProvider =>
             serviceProvider.GetRequiredService<AuthAPIDbContext>());
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ISessionRepository, SessionRepository>();
 
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IApplicationEventQueue, ApplicationEventQueue>();

@@ -8,6 +8,7 @@ public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContex
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     public Guid UserId => GetUserId();
+    public Guid SessionId => GetSessionId();
 
     private Guid GetUserId()
     {
@@ -18,5 +19,16 @@ public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContex
             ?? throw new Exception("Cannot resolve the name-identifier claim");
 
         return Guid.Parse(userIdClaim.Value);
+    }
+
+    private Guid GetSessionId()
+    {
+        var httpContext = _httpContextAccessor.HttpContext
+            ?? throw new Exception("Cannot resolve the HttpContext");
+
+        var sessionId = httpContext.User.FindFirst(ClaimTypes.Sid)
+            ?? throw new Exception("Cannot resolve the session-id claim");
+
+        return Guid.Parse(sessionId.Value);
     }
 }

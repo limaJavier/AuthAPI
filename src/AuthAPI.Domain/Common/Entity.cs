@@ -3,6 +3,7 @@ namespace AuthAPI.Domain.Common;
 public abstract class Entity : IEquatable<Entity>
 {
     public Guid Id { get; protected set; } = Guid.NewGuid();
+    public DateTime CreatedAtUtc { get; protected set; } = DateTime.UtcNow;
 
     protected Entity(Guid id)
     {

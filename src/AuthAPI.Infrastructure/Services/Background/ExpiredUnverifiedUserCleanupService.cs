@@ -11,7 +11,7 @@ public class ExpiredUnverifiedUserCleanupService(
     ILogger<ExpiredUnverifiedUserCleanupService> logger
 ) : BackgroundService
 {
-    private const int VerificationWindowInHours = 24;
+    private const int VerificationWindowInHours = 12;
     private readonly TimeSpan _interval = TimeSpan.FromHours(1); // Run every hour
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<ExpiredUnverifiedUserCleanupService> _logger = logger;

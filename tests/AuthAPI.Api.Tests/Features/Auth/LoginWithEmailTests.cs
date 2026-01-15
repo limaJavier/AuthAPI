@@ -35,14 +35,15 @@ public class LoginWithEmailTests(ITestOutputHelper output, PostgresContainerFixt
         var loginResponse = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
 
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
         //** Assert
         Assert.NotNull(refreshTokenHeader);
         Assert.NotEmpty(refreshTokenHeader);
         Assert.NotEmpty(loginResponse.AccessToken);
-        Assert.Contains(user.RefreshTokens, token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash));
+        Assert.Contains(user.Sessions, session => hasher.VerifyDeterministic(refreshTokenStr, session.CurrentRefreshToken!.Hash));
     }
 
     [Fact]

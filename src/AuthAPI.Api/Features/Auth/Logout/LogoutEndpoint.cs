@@ -17,10 +17,7 @@ public class LogoutEndpoint(ISender sender) : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var refreshToken = HttpContext.GetRefreshToken() // Read refresh token from cookie
-            ?? throw ApiException.Unauthorized("Cannot resolve refresh_token cookie");
-
-        var command = new LogoutCommand(refreshToken);
+        var command = new LogoutCommand();
         var result = await _sender.Send(command);
         if (result.IsFailure)
             throw ApiException.FromError(result.Error);

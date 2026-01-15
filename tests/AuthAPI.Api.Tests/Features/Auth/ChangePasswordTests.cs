@@ -14,10 +14,10 @@ namespace AuthAPI.Api.Tests.Features.Auth;
 public class ChangePasswordTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
 {
     [Fact]
-    public async Task WhenOldPasswordIsCorrectAndNewPasswordIsValid_ShouldChangePasswordAndRevokeAllRefreshTokens()
+    public async Task WhenOldPasswordIsCorrectAndNewPasswordIsValid_ShouldChangePasswordAndCloseAllOtherSessions()
     {
         //** Arrange
-        var (accessToken, _) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
+        var (accessToken, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
 
         var request = AuthRequestsFactory.CreateChangePasswordRequest();
 
@@ -33,12 +33,22 @@ public class ChangePasswordTests(ITestOutputHelper output, PostgresContainerFixt
         );
 
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
+
+        // Get other sessions
+        var otherSessions = user.Sessions
+            .Where(session =>
+                !session.RefreshTokens.Any(token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash)));
 
         //** Assert
         Assert.True(hasher.Verify(request.NewPassword, user.PasswordHash!)); // Verify new password
-        Assert.All(user.RefreshTokens, token => Assert.NotNull(token.RevokedAtUtc)); // Verify refresh tokens were revoked
+        Assert.All(otherSessions, session =>
+        {
+            Assert.NotNull(session.ClosedAtUtc);
+            Assert.Null(session.CurrentRefreshToken);
+        }); // All other sessions were closed
     }
 
     [Fact]

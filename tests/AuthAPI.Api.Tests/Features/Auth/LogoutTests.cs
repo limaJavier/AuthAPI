@@ -14,7 +14,7 @@ namespace AuthAPI.Api.Tests.Features.Auth;
 public class LogoutTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
 {
     [Fact]
-    public async Task WhenRefreshTokenIsValid_ShouldRevokeIt()
+    public async Task WhenSessionIsOpen_ShouldCloseIt()
     {
         //** Arrange
         var (accessToken, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync();
@@ -33,22 +33,28 @@ public class LogoutTests(ITestOutputHelper output, PostgresContainerFixture post
         var newRefreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
         var newRefreshTokenStr = AuthFlows.ExtractTokenFromCookie(newRefreshTokenHeader);
 
+        // Get user by email
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
-        var refreshToken = user.RefreshTokens.First(token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash));
+        // Get logout session
+        var session = user.Sessions
+            .First(session =>
+                session.RefreshTokens.Any(token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash)));
 
         //** Assert
-        Assert.NotNull(refreshToken.RevokedAtUtc); // Token was revoked
+        Assert.Null(session.CurrentRefreshToken); // There's no current refresh token, because session was closed
+        Assert.NotNull(session.ClosedAtUtc); // Session was closed
         Assert.Empty(newRefreshTokenStr); // New refresh token should be empty (it must be removed)
     }
 
     [Fact]
-    public async Task WhenLoggingOutTwiceWithTheSameRefreshToken_ShouldReturnUnauthorized()
+    public async Task WhenLoggingOutTwice_ShouldReturnUnauthorized()
     {
         //** Arrange
-        var (accessToken, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync();
+        var (accessToken, _) = await _authFlows.RegisterAndVerifyAsync();
 
         //** Act
 
@@ -56,51 +62,14 @@ public class LogoutTests(ITestOutputHelper output, PostgresContainerFixture post
         await _client.SendAndEnsureSuccessAsync(
             method: HttpMethod.Post,
             route: Routes.Auth.Logout,
-            accessToken: accessToken,
-            refreshToken: refreshTokenStr
+            accessToken: accessToken
         );
 
         // Logout again
         var httpResponse = await _client.SendAsync(
             method: HttpMethod.Post,
             route: Routes.Auth.Logout,
-            accessToken: accessToken,
-            refreshToken: refreshTokenStr
-        );
-
-        //** Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
-    }
-
-    [Fact]
-    public async Task WhenRefreshTokenIsMissing_ShouldReturnUnauthorized()
-    {
-        //** Arrange
-        var (accessToken, _) = await _authFlows.RegisterAndVerifyAsync();
-
-        //** Act
-        var httpResponse = await _client.SendAsync(
-            method: HttpMethod.Post,
-            route: Routes.Auth.Logout,
             accessToken: accessToken
-        );
-
-        //** Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode);
-    }
-
-    [Fact]
-    public async Task WhenRefreshTokenIsWrong_ShouldReturnUnauthorized()
-    {
-        //** Arrange
-        var (accessToken, _) = await _authFlows.RegisterAndVerifyAsync();
-
-        //** Act
-        var httpResponse = await _client.SendAsync(
-            method: HttpMethod.Post,
-            route: Routes.Auth.Logout,
-            accessToken: accessToken,
-            refreshToken: "WrongRefreshToken"
         );
 
         //** Assert

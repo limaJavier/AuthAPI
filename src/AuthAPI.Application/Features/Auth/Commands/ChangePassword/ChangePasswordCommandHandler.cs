@@ -9,18 +9,21 @@ namespace AuthAPI.Application.Features.Auth.Commands.ChangePassword;
 public class ChangePasswordCommandHandler(
     IUnitOfWork unitOfWork,
     IUserRepository userRepository,
+    ISessionRepository sessionRepository,
     IUserContext userContext,
     IHasher hasher
 ) : ICommandHandler<ChangePasswordCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IUserRepository _userRepository = userRepository;
+    private readonly ISessionRepository _sessionRepository = sessionRepository;
     private readonly IUserContext _userContext = userContext;
     private readonly IHasher _hasher = hasher;
 
     public async ValueTask<Result> Handle(ChangePasswordCommand command, CancellationToken cancellationToken)
     {
         var userId = _userContext.UserId; // Resolver user-id
+        var sessionId = _userContext.SessionId;
 
         // Get user by id
         var user = await _userRepository.GetByIdAsync(userId);
@@ -37,7 +40,18 @@ public class ChangePasswordCommandHandler(
         if (changePasswordResult.IsFailure)
             return changePasswordResult.Error;
 
-        user.RevokeAllRefreshTokens();
+        // Get all of the other sessions
+        var otherSessions = (await _sessionRepository.GetByUserIdAsync(userId))
+            .Where(session => session.Id != sessionId);
+
+        // Close all of the other sessions
+        foreach (var session in otherSessions)
+        {
+            var closingResult = session.Close();
+            if (closingResult.IsFailure)
+                return closingResult.Error;
+        }
+
         await _unitOfWork.CommitAsync();
 
         return Result.Success();

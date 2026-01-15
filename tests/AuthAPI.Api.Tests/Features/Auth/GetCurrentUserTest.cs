@@ -1,4 +1,3 @@
-using System.Net;
 using AuthAPI.Api.Features.Auth.GetCurrentUser;
 using AuthAPI.Api.Tests.Features.Utils;
 using AuthAPI.Api.Tests.Features.Utils.Constants;

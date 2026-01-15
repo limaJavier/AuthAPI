@@ -21,9 +21,9 @@ public class TokenGenerator(IOptions<JwtSettings> jwtSettingsOptions) : ITokenGe
         // Define claims
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Token's id
-            new Claim(JwtRegisteredClaimNames.Sub, generationParameters.UserId.ToString()), // User's id
-            new Claim(JwtRegisteredClaimNames.Email, generationParameters.Email), // User's email
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Token-ID
+            new Claim(ClaimTypes.NameIdentifier, generationParameters.UserId.ToString()), // User-ID
+            new Claim(ClaimTypes.Sid, generationParameters.SessionId.ToString()), // Session-ID
         };
 
         // Build token

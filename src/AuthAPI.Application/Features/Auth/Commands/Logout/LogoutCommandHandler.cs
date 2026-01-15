@@ -8,24 +8,25 @@ namespace AuthAPI.Application.Features.Auth.Commands.Logout;
 
 public class LogoutCommandHandler(
     IUnitOfWork unitOfWork,
-    IUserRepository userRepository,
-    IHasher hasher
+    ISessionRepository sessionRepository,
+    IUserContext userContext
 ) : ICommandHandler<LogoutCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IHasher _hasher = hasher;
+    private readonly ISessionRepository _sessionRepository = sessionRepository;
+    private readonly IUserContext _userContext = userContext;
 
     public async ValueTask<Result> Handle(LogoutCommand command, CancellationToken cancellationToken)
     {
-        // Get user by refresh-token
-        var refreshTokenHash = _hasher.HashDeterministic(command.RefreshToken);
-        var user = await _userRepository.GetByRefreshTokenHashAsync(refreshTokenHash);
-        if (user is null)
-            return Error.Unauthorized($"Refresh-Token {command.RefreshToken} does not exist");
+        var sessionId = _userContext.SessionId;
 
-        // Revoke refresh-token
-        var result = user.RevokeRefreshToken(command.RefreshToken, _hasher);
+        // Get session by ID
+        var session = await _sessionRepository.GetByIdAsync(sessionId);
+        if (session is null)
+            return Error.Unauthorized($"Session with ID {sessionId} does not exist");
+
+        // Close session
+        var result = session.Close();
         await _unitOfWork.CommitAsync();
 
         return result;

@@ -40,17 +40,18 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
         var response = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
 
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
-        var session = await verificationSessionManager.GetSessionAsync(verificationToken);
+        var verificationSession = await verificationSessionManager.GetSessionAsync(verificationToken);
 
         //** Assert
         Assert.NotNull(refreshTokenHeader);
         Assert.NotEmpty(refreshTokenHeader);
         Assert.NotEmpty(response.AccessToken);
-        Assert.Contains(user.RefreshTokens, token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash));
-        Assert.Null(session); // Session was removed
+        Assert.Contains(user.Sessions, session => hasher.VerifyDeterministic(refreshTokenStr, session.CurrentRefreshToken!.Hash));
+        Assert.Null(verificationSession); // Verification-session was removed
     }
 
     [Fact]

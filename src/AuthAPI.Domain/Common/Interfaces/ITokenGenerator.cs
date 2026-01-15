@@ -8,5 +8,5 @@ public interface ITokenGenerator
 
 public record AccessTokenGenerationParameters(
     Guid UserId,
-    string Email
+    Guid SessionId
 );

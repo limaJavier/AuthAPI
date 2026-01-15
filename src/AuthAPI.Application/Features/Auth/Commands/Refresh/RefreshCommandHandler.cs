@@ -9,37 +9,37 @@ namespace AuthAPI.Application.Features.Auth.Commands.Refresh;
 
 public class RefreshCommandHandler(
     IUnitOfWork unitOfWork,
-    IUserRepository userRepository,
+    ISessionRepository sessionRepository,
     IHasher hasher,
     ITokenGenerator tokenGenerator
 ) : ICommandHandler<RefreshCommand, Result<AuthResult>>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IUserRepository _userRepository = userRepository;
+    private readonly ISessionRepository _sessionRepository = sessionRepository;
     private readonly IHasher _hasher = hasher;
     private readonly ITokenGenerator _tokenGenerator = tokenGenerator;
 
     public async ValueTask<Result<AuthResult>> Handle(RefreshCommand command, CancellationToken cancellationToken)
     {
-        //** Get user by refresh-token
+        // Get session by refresh-token
         var refreshTokenHash = _hasher.HashDeterministic(command.RefreshToken);
-        var user = await _userRepository.GetByRefreshTokenHashAsync(refreshTokenHash);
-        if (user is null)
-            return Error.Unauthorized($"Refresh-Token {command.RefreshToken} does not exist");
+        var session = await _sessionRepository.GetByRefreshTokenHashAsync(refreshTokenHash);
+        if (session is null)
+            return Error.Unauthorized($"Refresh-token {command.RefreshToken} does not exist");
 
         // Generate JWT token
         var accessToken = _tokenGenerator.GenerateAccessToken(new AccessTokenGenerationParameters(
-            user.Id,
-            user.Email
+            session.UserId,
+            session.Id
         ));
 
-        // Replace refresh token
-        var result = user.ReplaceRefreshToken(command.RefreshToken, _hasher, _tokenGenerator);
+        // Refresh session
+        var refreshResult = session.Refresh(command.RefreshToken, _hasher, _tokenGenerator);
         await _unitOfWork.CommitAsync();
 
-        if (result.IsFailure)
-            return result.Error;
+        if (refreshResult.IsFailure)
+            return refreshResult.Error;
 
-        return new AuthResult(result.Value, accessToken);
+        return new AuthResult(refreshResult.Value, accessToken);
     }
 }

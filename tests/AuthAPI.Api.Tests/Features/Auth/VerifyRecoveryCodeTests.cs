@@ -30,10 +30,10 @@ public class VerifyRecoveryCodeTests(ITestOutputHelper output, PostgresContainer
             body: request
         );
 
-        var session = (await verificationSessionManager.GetSessionAsync(verificationToken))!;
+        var verificationSession = (await verificationSessionManager.GetSessionAsync(verificationToken))!;
 
         //** Assert
-        Assert.True(session.IsVerified);
+        Assert.True(verificationSession.IsVerified);
     }
 
     [Fact]

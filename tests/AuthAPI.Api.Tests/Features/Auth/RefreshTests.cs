@@ -35,34 +35,40 @@ public class RefreshTests(ITestOutputHelper output, PostgresContainerFixture pos
         var newRefreshTokenStr = AuthFlows.ExtractTokenFromCookie(newRefreshTokenHeader);
         var response = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
 
+        // Get user by email
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
-        var newRefreshToken = user.RefreshTokens.First(token => hasher.VerifyDeterministic(newRefreshTokenStr, token.Hash));
-        var oldRefreshToken = user.RefreshTokens.First(token => hasher.VerifyDeterministic(oldRefreshTokenStr, token.Hash));
+        // Get refreshed session
+        var session = user.Sessions
+            .First(session =>
+                session.RefreshTokens.Any(token => hasher.VerifyDeterministic(newRefreshTokenStr, token.Hash)));
+
+        // Get old refresh-token
+        var oldRefreshToken = session.RefreshTokens.First(token => hasher.VerifyDeterministic(oldRefreshTokenStr, token.Hash));
 
         // Assert
         Assert.NotEmpty(response.AccessToken);
-        Assert.NotNull(oldRefreshToken!.RevokedAtUtc); // Old refresh-token is revoked
-        Assert.Equal(oldRefreshToken.ReplacementTokenId, newRefreshToken.Id); // Old refresh-token was replaced
+        Assert.True(hasher.VerifyDeterministic(newRefreshTokenStr, session.CurrentRefreshToken!.Hash));
+        Assert.NotNull(oldRefreshToken!.RevokedAtUtc); // Old refresh-token was revoked
     }
 
     [Theory]
     [InlineData(2)]
     [InlineData(5)]
     [InlineData(10)]
-    public async Task WhenRefreshTokenWasAlreadyReplaced_ShouldRevokeChainAndReturnUnauthorized(int chainLength)
+    public async Task WhenRefreshTokenWasAlreadyRevoked_ShouldCloseSessionAndReturnUnauthorized(int chainLength)
     {
         //** Arrange
-        var tokenChain = new List<string>();
-        var (_, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
-        tokenChain.Add(refreshTokenStr);
+        var (_, firstRefreshToken) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
 
         // Resolve dependencies
         var hasher = _serviceProvider.GetRequiredService<IHasher>();
 
         //** Act
+        var refreshTokenStr = firstRefreshToken;
         HttpResponseMessage httpResponse;
         foreach (var _ in Enumerable.Range(0, chainLength))
         {
@@ -74,26 +80,30 @@ public class RefreshTests(ITestOutputHelper output, PostgresContainerFixture pos
 
             var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
             refreshTokenStr = AuthFlows.ExtractTokenFromCookie(refreshTokenHeader);
-            tokenChain.Add(refreshTokenStr);
         }
 
         // Send a replaced (and revoked) token
         httpResponse = await _client.SendAsync(
             method: HttpMethod.Post,
             route: Routes.Auth.Refresh,
-            refreshToken: tokenChain[0]
+            refreshToken: firstRefreshToken
         );
 
+        // Get user by email
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
-        var revokedChain = user.RefreshTokens.Where(token =>
-            tokenChain.Any(tokenStr => hasher.VerifyDeterministic(tokenStr, token.Hash)));
+        // Get refreshed session
+        var session = user.Sessions
+            .First(session =>
+                session.RefreshTokens.Any(token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash)));
 
         //** Assert
         Assert.Equal(HttpStatusCode.Unauthorized, httpResponse.StatusCode); // Unauthorized status code
-        Assert.All(revokedChain, token => Assert.NotNull(token.RevokedAtUtc)); // All tokens in the chain are revoked
+        Assert.Null(session.CurrentRefreshToken); // Current refresh-token is null
+        Assert.NotNull(session.ClosedAtUtc); // Session was closed
     }
 
     [Fact]

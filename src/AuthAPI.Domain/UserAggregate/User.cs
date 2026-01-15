@@ -1,6 +1,8 @@
 using AuthAPI.Domain.Common;
 using AuthAPI.Domain.Common.Interfaces;
 using AuthAPI.Domain.Common.Results;
+using AuthAPI.Domain.SessionAggregate;
+using AuthAPI.Domain.SessionAggregate.Entities;
 using AuthAPI.Domain.UserAggregate.Entities;
 
 namespace AuthAPI.Domain.UserAggregate;
@@ -12,11 +14,10 @@ public class User : AggregateRoot
     public string? PasswordHash { get; private set; }
     public bool IsVerified { get; private set; } = false;
     public bool IsActive { get; private set; } = true;
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-
 
     // Relational properties
-    public ICollection<RefreshToken> RefreshTokens { get; private set; } = null!;
+    public ICollection<Credential> Credentials { get; private set; } = null!; // Belongs to user aggregate
+    public ICollection<Session> Sessions { get; private set; } = null!;
 
     private User() { }
 
@@ -65,59 +66,59 @@ public class User : AggregateRoot
         return Result.Success();
     }
 
-    public string AddRefreshToken(ITokenGenerator tokenGenerator, IHasher hasher)
-    {
-        // Create token
-        var refreshTokenStr = tokenGenerator.GenerateRandomToken();
-        var refreshToken = RefreshToken.Create(
-            hash: hasher.HashDeterministic(refreshTokenStr),
-            expiresAtUtc: DateTime.UtcNow.AddDays(15),
-            userId: Id
-        );
-        // Add token
-        RefreshTokens.Add(refreshToken);
-        return refreshTokenStr;
-    }
+    // public string AddRefreshToken(ITokenGenerator tokenGenerator, IHasher hasher)
+    // {
+    //     // Create token
+    //     var refreshTokenStr = tokenGenerator.GenerateRandomToken();
+    //     var refreshToken = RefreshToken.Create(
+    //         hash: hasher.HashDeterministic(refreshTokenStr),
+    //         expiresAtUtc: DateTime.UtcNow.AddDays(15),
+    //         sessionId: Id
+    //     );
+    //     // Add token
+    //     RefreshTokens.Add(refreshToken);
+    //     return refreshTokenStr;
+    // }
 
-    public Result<string> ReplaceRefreshToken(string refreshTokenStr, IHasher hasher, ITokenGenerator tokenGenerator)
-    {
-        // Get old refresh-token
-        var oldTokenHash = hasher.HashDeterministic(refreshTokenStr);
-        var oldToken = RefreshTokens.FirstOrDefault(token => token.Hash == oldTokenHash);
-        if (oldToken is null)
-            return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
+    // public Result<string> ReplaceRefreshToken(string refreshTokenStr, IHasher hasher, ITokenGenerator tokenGenerator)
+    // {// Get old refresh-token
+    //     var oldTokenHash = hasher.HashDeterministic(refreshTokenStr);
+    //     var oldToken = RefreshTokens.FirstOrDefault(token => token.Hash == oldTokenHash);
+    //     if (oldToken is null)
+    //         return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
 
-        // Create new refresh-token
-        var newTokenStr = tokenGenerator.GenerateRandomToken();
-        var newToken = RefreshToken.Create(
-            hash: hasher.HashDeterministic(newTokenStr),
-            expiresAtUtc: DateTime.UtcNow.AddDays(15),
-            userId: Id
-        );
+    //     // Create new refresh-token
+    //     var newTokenStr = tokenGenerator.GenerateRandomToken();
+    //     var newToken = RefreshToken.Create(
+    //         hash: hasher.HashDeterministic(newTokenStr),
+    //         expiresAtUtc: DateTime.UtcNow.AddDays(15),
+    //         sessionId: Id
+    //     );
 
-        // Replace old refresh-token
-        var result = oldToken.Replace(newToken.Id);
-        if (result.IsFailure)
-            return result.Error;
+    //     // Replace old refresh-token
+    //     var result = oldToken.Replace(newToken.Id);
+    //     if (result.IsFailure)
+    //         return result.Error;
 
-        RefreshTokens.Add(newToken); // Add refresh-token to user
+    //     RefreshTokens.Add(newToken); // Add refresh-token to user
 
-        return newTokenStr;
-    }
+    //     return newTokenStr;
 
-    public Result RevokeRefreshToken(string refreshTokenStr, IHasher hasher)
-    {
-        var tokenHash = hasher.HashDeterministic(refreshTokenStr);
-        var token = RefreshTokens.FirstOrDefault(token => token.Hash == tokenHash);
-        if (token is null)
-            return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
+    // }
 
-        return token.Revoke();
-    }
+    // public Result RevokeRefreshToken(string refreshTokenStr, IHasher hasher)
+    // {
+    //     var tokenHash = hasher.HashDeterministic(refreshTokenStr);
+    //     var token = RefreshTokens.FirstOrDefault(token => token.Hash == tokenHash);
+    //     if (token is null)
+    //         return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
 
-    public void RevokeAllRefreshTokens()
-    {
-        foreach (var token in RefreshTokens)
-            token.RevokeWithoutValidation();
-    }
+    //     return token.Revoke();
+    // }
+
+    // public void RevokeAllRefreshTokens()
+    // {
+    //     foreach (var token in RefreshTokens)
+    //         token.RevokeWithoutValidation();
+    // }
 }

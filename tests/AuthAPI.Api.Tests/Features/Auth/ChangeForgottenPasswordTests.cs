@@ -6,7 +6,6 @@ using AuthAPI.Api.Tests.Features.Utils.Routes;
 using AuthAPI.Api.Tests.Fixtures;
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Domain.Common.Interfaces;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -16,7 +15,7 @@ namespace AuthAPI.Api.Tests.Features.Auth;
 public class ChangeForgottenPasswordTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
 {
     [Fact]
-    public async Task WhenRecoveryCodeIsVerifiedAndPasswordIsValid_ShouldResetPassword()
+    public async Task WhenRecoveryCodeIsVerifiedAndPasswordIsValid_ShouldResetPasswordAndCloseAllSessions()
     {
         //** Arrange
         await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
@@ -35,15 +34,20 @@ public class ChangeForgottenPasswordTests(ITestOutputHelper output, PostgresCont
         await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.ChangeForgottenPassword, request);
 
         var user = await _dbContext.Users
-            .Include(user => user.RefreshTokens)
+            .Include(user => user.Sessions)
+                .ThenInclude(session => session.RefreshTokens)
             .FirstAsync(user => user.Email == Constants.User.Email);
 
-        var session = await verificationSessionManager.GetSessionAsync(verificationToken);
+        var verificationSession = await verificationSessionManager.GetSessionAsync(verificationToken);
 
         //** Assert
         Assert.True(hasher.Verify(request.Password, user.PasswordHash!)); // Verify new password
-        Assert.All(user.RefreshTokens, token => Assert.NotNull(token.RevokedAtUtc)); // Verify refresh tokens were revoked
-        Assert.Null(session); // Session was removed
+        Assert.All(user.Sessions, session =>
+        {
+            Assert.NotNull(session.ClosedAtUtc);
+            Assert.Null(session.CurrentRefreshToken);
+        }); // All sessions were closed
+        Assert.Null(verificationSession); // Verification-session was removed
     }
 
     [Fact]
