@@ -33,7 +33,7 @@ public static class DependencyInjection
         services.AddSingleton<IHasher, Hasher>();
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
         services.AddSingleton<IVerificationSessionManager, VerificationSessionManager>();
-        services.AddSingleton<IEmailSender, EmailSender>();
+        services.AddSingleton<IEmailSender, GmailSender>();
 
         services.AddHostedService<ExpiredUnverifiedUserCleanupService>();
 
@@ -47,10 +47,9 @@ public static class DependencyInjection
         services.Configure<JwtSettings>(
             configuration.GetSection(nameof(JwtSettings))
         );
-
-        // services.Configure<EmailSettings>(
-        //     configuration.GetSection(nameof(EmailSettings))
-        // );
+        services.Configure<EmailSettings>(
+            configuration.GetSection(nameof(EmailSettings))
+        );
 
         return services;
     }

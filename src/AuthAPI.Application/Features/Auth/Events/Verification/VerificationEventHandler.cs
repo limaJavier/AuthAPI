@@ -24,7 +24,10 @@ public class VerificationEventHandler(
             return;
         }
 
-        var result = await _emailSender.SendAsync(session.Email, session.Code);
+        var result = await _emailSender.SendAsync(
+            toEmail: session.Email,
+            subject: verificationEvent.Type == VerificationEventType.Email ? "Email Verification Code" : "Password Recovery Code",
+            body: session.Code);
 
         if (result.IsFailure)
         {

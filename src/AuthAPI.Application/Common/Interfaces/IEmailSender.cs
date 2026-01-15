@@ -4,5 +4,5 @@ namespace AuthAPI.Application.Common.Interfaces;
 
 public interface IEmailSender
 {
-    Task<Result> SendAsync(string email, string body);
+    Task<Result> SendAsync(string toEmail, string subject, string body);
 }
