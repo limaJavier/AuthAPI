@@ -7,6 +7,8 @@ public static partial class Constants
         public const string Name = "John";
         public const string Email = "john@mail.com";
         public const string Password = "Password0;";
+        public const string GoogleIdentifier = "104470050905039921647";
+        public const string GoogleToken = $"{Name}_GoogleToken";
         
         public static readonly List<string> BadPasswords = [
             "",

@@ -17,7 +17,7 @@ namespace AuthAPI.Api.Tests.Features.Auth;
 public class LoginWithEmailTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
 {
     [Fact]
-    public async Task WhenUserWithEmailExistsIsVerifiedAndPasswordMatch_ShouldReturnAccessAndRefreshTokens()
+    public async Task WhenUserWithEmailExistsIsVerifiedAndPasswordMatch_ShouldCreateASessionAndReturnAccessAndRefreshTokens()
     {
         //** Arrange
         await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
@@ -32,7 +32,7 @@ public class LoginWithEmailTests(ITestOutputHelper output, PostgresContainerFixt
 
         var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
         var refreshTokenStr = AuthFlows.ExtractTokenFromCookie(refreshTokenHeader);
-        var loginResponse = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
+        var response = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
 
         var user = await _dbContext.Users
             .Include(user => user.Sessions)
@@ -42,7 +42,7 @@ public class LoginWithEmailTests(ITestOutputHelper output, PostgresContainerFixt
         //** Assert
         Assert.NotNull(refreshTokenHeader);
         Assert.NotEmpty(refreshTokenHeader);
-        Assert.NotEmpty(loginResponse.AccessToken);
+        Assert.NotEmpty(response.AccessToken);
         Assert.Contains(user.Sessions, session => hasher.VerifyDeterministic(refreshTokenStr, session.CurrentRefreshToken!.Hash));
     }
 

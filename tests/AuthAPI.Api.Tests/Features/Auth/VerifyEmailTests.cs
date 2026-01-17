@@ -18,7 +18,7 @@ namespace AuthAPI.Api.Tests.Features.Auth;
 public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
 {
     [Fact]
-    public async Task WhenVerificationTokenAndCodeAreValid_ShouldReturnAccessAndRefreshTokens()
+    public async Task WhenVerificationTokenAndCodeAreValid_ShouldCreateASessionAndReturnAccessAndRefreshTokens()
     {
         //** Arrange
         var (verificationToken, verificationCode) = await _authFlows.RegisterAsync(); // Register user

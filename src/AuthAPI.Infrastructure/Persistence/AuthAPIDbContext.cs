@@ -1,10 +1,9 @@
-using System.Diagnostics.Eventing.Reader;
 using AuthAPI.Application.Common.Interfaces;
 using AuthAPI.Domain.Common;
 using AuthAPI.Domain.SessionAggregate;
 using AuthAPI.Domain.SessionAggregate.Entities;
 using AuthAPI.Domain.UserAggregate;
-using AuthAPI.Domain.UserAggregate.Entities;
+using AuthAPI.Domain.UserAggregate.ValueObjects;
 using AuthAPI.Infrastructure.Middlewares;
 using Mediator;
 using Microsoft.AspNetCore.Http;

@@ -2,8 +2,8 @@ using AuthAPI.Domain.Common;
 using AuthAPI.Domain.Common.Interfaces;
 using AuthAPI.Domain.Common.Results;
 using AuthAPI.Domain.SessionAggregate;
-using AuthAPI.Domain.SessionAggregate.Entities;
-using AuthAPI.Domain.UserAggregate.Entities;
+using AuthAPI.Domain.UserAggregate.Enums;
+using AuthAPI.Domain.UserAggregate.ValueObjects;
 
 namespace AuthAPI.Domain.UserAggregate;
 
@@ -38,6 +38,23 @@ public class User : AggregateRoot
         return user;
     }
 
+    public static User Create(
+        string name,
+        string email,
+        string credentialIdentifier,
+        CredentialType credentialType
+    )
+    {
+        var user = new User
+        {
+            Name = name,
+            Email = email,
+            Credentials = [Credential.Create(credentialIdentifier, credentialType)]
+        };
+
+        return user;
+    }
+
     public Result VerifyPassword(string password, IHasher hasher)
     {
         if (PasswordHash is null)
@@ -51,6 +68,9 @@ public class User : AggregateRoot
 
     public Result ChangePassword(string password, IHasher hasher)
     {
+        if (!IsVerified)
+            return Error.Conflict($"User with ID {Id} is not verified");
+
         if (PasswordHash is null)
             return Error.Conflict("User does not have a password");
 
@@ -66,59 +86,15 @@ public class User : AggregateRoot
         return Result.Success();
     }
 
-    // public string AddRefreshToken(ITokenGenerator tokenGenerator, IHasher hasher)
-    // {
-    //     // Create token
-    //     var refreshTokenStr = tokenGenerator.GenerateRandomToken();
-    //     var refreshToken = RefreshToken.Create(
-    //         hash: hasher.HashDeterministic(refreshTokenStr),
-    //         expiresAtUtc: DateTime.UtcNow.AddDays(15),
-    //         sessionId: Id
-    //     );
-    //     // Add token
-    //     RefreshTokens.Add(refreshToken);
-    //     return refreshTokenStr;
-    // }
+    public Result AddCredential(string credentialIdentifier, CredentialType credentialType)
+    {
+        if (!IsVerified)
+            return Error.Conflict($"User with ID {Id} is not verified");
 
-    // public Result<string> ReplaceRefreshToken(string refreshTokenStr, IHasher hasher, ITokenGenerator tokenGenerator)
-    // {// Get old refresh-token
-    //     var oldTokenHash = hasher.HashDeterministic(refreshTokenStr);
-    //     var oldToken = RefreshTokens.FirstOrDefault(token => token.Hash == oldTokenHash);
-    //     if (oldToken is null)
-    //         return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
+        if (Credentials.Any(credential => credential.Type == credentialType))
+            return Error.Conflict($"User with ID {Id} already have a credential of type {credentialType}");
 
-    //     // Create new refresh-token
-    //     var newTokenStr = tokenGenerator.GenerateRandomToken();
-    //     var newToken = RefreshToken.Create(
-    //         hash: hasher.HashDeterministic(newTokenStr),
-    //         expiresAtUtc: DateTime.UtcNow.AddDays(15),
-    //         sessionId: Id
-    //     );
-
-    //     // Replace old refresh-token
-    //     var result = oldToken.Replace(newToken.Id);
-    //     if (result.IsFailure)
-    //         return result.Error;
-
-    //     RefreshTokens.Add(newToken); // Add refresh-token to user
-
-    //     return newTokenStr;
-
-    // }
-
-    // public Result RevokeRefreshToken(string refreshTokenStr, IHasher hasher)
-    // {
-    //     var tokenHash = hasher.HashDeterministic(refreshTokenStr);
-    //     var token = RefreshTokens.FirstOrDefault(token => token.Hash == tokenHash);
-    //     if (token is null)
-    //         return Error.Conflict($"User does not have a refresh-token {refreshTokenStr}");
-
-    //     return token.Revoke();
-    // }
-
-    // public void RevokeAllRefreshTokens()
-    // {
-    //     foreach (var token in RefreshTokens)
-    //         token.RevokeWithoutValidation();
-    // }
+        Credentials.Add(Credential.Create(credentialIdentifier, credentialType));
+        return Result.Success();
+    }
 }

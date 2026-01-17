@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
         services.AddSingleton<IVerificationSessionManager, VerificationSessionManager>();
         services.AddSingleton<IEmailSender, GmailSender>();
+        services.AddSingleton<IGoogleValidator, GoogleValidator>();
 
         services.AddHostedService<ExpiredUnverifiedUserCleanupService>();
 
