@@ -1,3 +1,4 @@
+using AuthAPI.Api.Features.Auth.AddPassword;
 using AuthAPI.Api.Features.Auth.ChangePassword;
 using AuthAPI.Api.Features.Auth.ForgotPassword;
 using AuthAPI.Api.Features.Auth.LoginWithEmail;
@@ -42,5 +43,12 @@ public static class AuthRequestsFactory
     (
         OldPassword: oldPassword,
         NewPassword: newPassword
+    );
+
+    public static AddPasswordRequest CreateAddPasswordRequest(
+        string password = Constants.User.Password
+    ) => new
+    (
+        Password: password
     );
 }

@@ -50,6 +50,7 @@ public class VerifyEmailTests(ITestOutputHelper output, PostgresContainerFixture
         Assert.NotNull(refreshTokenHeader);
         Assert.NotEmpty(refreshTokenHeader);
         Assert.NotEmpty(response.AccessToken);
+        Assert.True(user.IsVerified); // User verified
         Assert.Contains(user.Sessions, session => hasher.VerifyDeterministic(refreshTokenStr, session.CurrentRefreshToken!.Hash));
         Assert.Null(verificationSession); // Verification-session was removed
     }

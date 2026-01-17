@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
 using AuthAPI.Api.Features.Auth.Common.Responses;
+using AuthAPI.Api.Features.Auth.EnterWithGoogle;
 using AuthAPI.Api.Features.Auth.ForgotPassword;
+using AuthAPI.Api.Features.Auth.LoginWithEmail;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
 using AuthAPI.Api.Features.Auth.VerifyRecoveryCode;
@@ -14,7 +16,7 @@ namespace AuthAPI.Api.Tests.Features.Common.Flows;
 
 public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : AbstractFlows(serviceProvider, client)
 {
-    public async Task<(string VerificationToken, string VerificationCode)> RegisterAsync(
+    public async Task<(string verificationToken, string verificationCode)> RegisterAsync(
         string name = Constants.User.Name,
         string email = Constants.User.Email,
         string password = Constants.User.Password
@@ -27,9 +29,9 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
         );
 
         var response = await _client.SendAsync<VerificationResponse>(
-            HttpMethod.Post,
-            Routes.Auth.Register,
-            registerRequest
+            method: HttpMethod.Post,
+            route: Routes.Auth.Register,
+            body: registerRequest
         );
 
         var verificationCode = await GetVerificationCodeAsync(response.VerificationToken);
@@ -37,14 +39,18 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
         return (response.VerificationToken, verificationCode);
     }
 
-    public async Task<(string AccessToken, string RefreshToken)> VerifyEmailAsync(string verificationToken, string verificationCode)
+    public async Task<(string accessToken, string refreshToken)> VerifyEmailAsync(string verificationToken, string verificationCode)
     {
         var verificationRequest = new VerifyEmailRequest(
             verificationToken,
             verificationCode
         );
 
-        var httpResponse = await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.VerifyEmail, verificationRequest);
+        var httpResponse = await _client.SendAndEnsureSuccessAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.VerifyEmail,
+            body: verificationRequest
+        );
 
         var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
         var refreshToken = ExtractTokenFromCookie(refreshTokenHeader);
@@ -54,7 +60,7 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
         return (response.AccessToken, refreshToken);
     }
 
-    public async Task<(string AccessToken, string RefreshToken)> RegisterAndVerifyAsync(
+    public async Task<(string accessToken, string refreshToken)> RegisterAndVerifyAsync(
         string name = Constants.User.Name,
         string email = Constants.User.Email,
         string password = Constants.User.Password
@@ -64,11 +70,35 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
         return await VerifyEmailAsync(verificationToken, verificationCode); // Verify user
     }
 
-    public async Task<(string VerificationToken, string VerificationCode)> ForgotPasswordAsync(string email = Constants.User.Email)
+    public async Task<(string accessToken, string refreshToken)> LoginAsync(
+        string email = Constants.User.Email,
+        string password = Constants.User.Password
+    )
+    {
+        var request = new LoginWithEmailRequest(email, password);
+        var httpResponse = await _client.SendAndEnsureSuccessAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.Login,
+            body: request
+        );
+
+        var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
+        var refreshToken = ExtractTokenFromCookie(refreshTokenHeader);
+
+        var response = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
+
+        return (response.AccessToken, refreshToken);
+    }
+
+    public async Task<(string verificationToken, string verificationCode)> ForgotPasswordAsync(string email = Constants.User.Email)
     {
         var request = new ForgotPasswordRequest(email);
 
-        var response = await _client.SendAsync<VerificationResponse>(HttpMethod.Post, Routes.Auth.ForgotPassword, request);
+        var response = await _client.SendAsync<VerificationResponse>(
+            method: HttpMethod.Post,
+            route: Routes.Auth.ForgotPassword,
+            body: request
+        );
 
         var verificationCode = await GetVerificationCodeAsync(response.VerificationToken);
 
@@ -89,6 +119,24 @@ public class AuthFlows(IServiceProvider serviceProvider, HttpClient client) : Ab
             accessToken: accessToken,
             refreshToken: refreshToken
         );
+    }
+
+    public async Task<(string verificationToken, string verificationCode)> EnterWithGoogleAsync()
+    {
+        var request = new EnterWithGoogleRequest(Constants.User.GoogleToken);
+
+        var httpResponse = await _client.SendAndEnsureSuccessAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.EnterWithGoogle,
+            body: request
+        );
+
+        var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
+        var refreshToken = ExtractTokenFromCookie(refreshTokenHeader);
+
+        var response = (await httpResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
+
+        return (response.AccessToken, refreshToken);
     }
 
     public static string ExtractTokenFromCookie(string cookie, string tokenName = "refresh_token")

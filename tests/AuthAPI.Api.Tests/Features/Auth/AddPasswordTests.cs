@@ -1,5 +1,5 @@
 using System.Net;
-using AuthAPI.Api.Features.Auth.ChangePassword;
+using AuthAPI.Api.Features.Auth.AddPassword;
 using AuthAPI.Api.Tests.Features.Utils;
 using AuthAPI.Api.Tests.Features.Utils.Constants;
 using AuthAPI.Api.Tests.Features.Utils.Routes;
@@ -11,31 +11,31 @@ using Xunit.Abstractions;
 
 namespace AuthAPI.Api.Tests.Features.Auth;
 
-public class ChangePasswordTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
+public class AddPasswordTests(ITestOutputHelper output, PostgresContainerFixture postgresContainerFixture) : BaseAuthTests(output, postgresContainerFixture)
 {
     [Theory]
     [InlineData(0)]
     [InlineData(3)]
     [InlineData(5)]
     [InlineData(10)]
-    public async Task WhenOldPasswordIsCorrectAndNewPasswordIsValid_ShouldChangePasswordAndCloseAllOtherSessions(int openSessions)
+    public async Task WhenUserWasRegisteredAndDoesNotHaveAPassword_ShouldAddPasswordAndCloseAllOtherSessions(int openSessions)
     {
         //** Arrange
-        var (accessToken, refreshTokenStr) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
+        var (accessToken, refreshTokenStr) = await _authFlows.EnterWithGoogleAsync();
 
         // Login several times (i.e create several sessions)
         foreach (var _ in Enumerable.Range(0, openSessions))
-            await _authFlows.LoginAsync();
+            await _authFlows.EnterWithGoogleAsync();
 
-        var request = AuthRequestsFactory.CreateChangePasswordRequest();
+        var request = AuthRequestsFactory.CreateAddPasswordRequest();
 
         // Resolve dependencies
         var hasher = _serviceProvider.GetRequiredService<IHasher>();
 
-        //** Act 
-        var httpResponse = await _client.SendAndEnsureSuccessAsync(
+        //** Act
+        await _client.SendAndEnsureSuccessAsync(
             method: HttpMethod.Post,
-            route: Routes.Auth.ChangePassword,
+            route: Routes.Auth.AddPassword,
             body: request,
             accessToken: accessToken
         );
@@ -51,7 +51,7 @@ public class ChangePasswordTests(ITestOutputHelper output, PostgresContainerFixt
                 !session.RefreshTokens.Any(token => hasher.VerifyDeterministic(refreshTokenStr, token.Hash)));
 
         //** Assert
-        Assert.True(hasher.Verify(request.NewPassword, user.PasswordHash!)); // Verify new password
+        Assert.True(hasher.Verify(request.Password, user.PasswordHash!)); // Verify new password
         Assert.Single(user.Sessions, session =>
             session.ClosedAtUtc is null &&
             hasher.VerifyDeterministic(refreshTokenStr, session.CurrentRefreshToken!.Hash)
@@ -64,17 +64,45 @@ public class ChangePasswordTests(ITestOutputHelper output, PostgresContainerFixt
     }
 
     [Fact]
-    public async Task WhenOldPasswordIsWrong_ShouldReturnConflict()
+    public async Task WhenPasswordWasAlreadyAdded_ShouldReturnConflict()
+    {
+        //** Arrange
+        var (accessToken, _) = await _authFlows.EnterWithGoogleAsync(); // Enter with google
+
+        var request = AuthRequestsFactory.CreateAddPasswordRequest();
+
+        // Add password
+        await _client.SendAndEnsureSuccessAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.AddPassword,
+            body: request,
+            accessToken: accessToken
+        );
+
+        //** Act
+        var httpResponse = await _client.SendAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.AddPassword,
+            body: request,
+            accessToken: accessToken
+        );
+
+        //** Assert
+        Assert.Equal(HttpStatusCode.Conflict, httpResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task WhenUserRegisteredWithEmail_ShouldReturnConflict()
     {
         //** Arrange
         var (accessToken, _) = await _authFlows.RegisterAndVerifyAsync(); // Register and verify user
 
-        var request = AuthRequestsFactory.CreateChangePasswordRequest(oldPassword: "Wrong" + Constants.User.Password);
+        var request = AuthRequestsFactory.CreateAddPasswordRequest();
 
-        //** Act 
+        //** Act
         var httpResponse = await _client.SendAsync(
             method: HttpMethod.Post,
-            route: Routes.Auth.ChangePassword,
+            route: Routes.Auth.AddPassword,
             body: request,
             accessToken: accessToken
         );
@@ -88,32 +116,29 @@ public class ChangePasswordTests(ITestOutputHelper output, PostgresContainerFixt
         CommonTestMethods.WhenAccessTokenIsMissing_ShouldReturnUnauthorized(
             _client,
             HttpMethod.Post,
-            Routes.Auth.ChangePassword
+            Routes.Auth.AddPassword
         );
 
     [Theory]
-    [MemberData(nameof(BadChangePasswordRequests))]
-    public async Task WhenRequestIsBad_ShouldReturnBadRequest(ChangePasswordRequest request)
+    [MemberData(nameof(BadAddPasswordRequests))]
+    public async Task WhenRequestIsBad_ShouldReturnBadRequest(AddPasswordRequest request)
     {
         //** Arrange
-        var (accessToken, _) = await _authFlows.RegisterAndVerifyAsync();
+        var (accessToken, _) = await _authFlows.EnterWithGoogleAsync();
 
         //** Act and assert
         await CommonTestMethods.WhenRequestIsBad_ShouldReturnBadRequest(
             _client,
             HttpMethod.Post,
-            Routes.Auth.ChangePassword,
+            Routes.Auth.AddPassword,
             request,
             accessToken
         );
     }
 
-    public static IEnumerable<object[]> BadChangePasswordRequests()
+    public static IEnumerable<object[]> BadAddPasswordRequests()
     {
         foreach (var badPassword in Constants.User.BadPasswords)
-        {
-            yield return [AuthRequestsFactory.CreateChangePasswordRequest(oldPassword: badPassword)];
-            yield return [AuthRequestsFactory.CreateChangePasswordRequest(newPassword: badPassword)];
-        }
+            yield return [AuthRequestsFactory.CreateAddPasswordRequest(password: badPassword)];
     }
 }

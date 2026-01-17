@@ -15,5 +15,6 @@ public static partial class Routes
         public const string ChangePassword = "/auth/change-password";
         public const string Me = "/auth/me";
         public const string EnterWithGoogle = "/auth/google";
+        public const string AddPassword = "/auth/add-password";
     }
 }

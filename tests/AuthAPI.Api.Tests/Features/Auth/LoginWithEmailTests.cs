@@ -28,7 +28,11 @@ public class LoginWithEmailTests(ITestOutputHelper output, PostgresContainerFixt
         var hasher = _serviceProvider.GetRequiredService<IHasher>();
 
         //** Act
-        var httpResponse = await _client.SendAndEnsureSuccessAsync(HttpMethod.Post, Routes.Auth.Login, request);
+        var httpResponse = await _client.SendAndEnsureSuccessAsync(
+            method: HttpMethod.Post,
+            route: Routes.Auth.Login,
+            body: request
+        );
 
         var refreshTokenHeader = httpResponse.Headers.GetValues("Set-Cookie").First();
         var refreshTokenStr = AuthFlows.ExtractTokenFromCookie(refreshTokenHeader);

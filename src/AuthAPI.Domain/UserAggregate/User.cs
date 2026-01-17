@@ -49,6 +49,7 @@ public class User : AggregateRoot
         {
             Name = name,
             Email = email,
+            IsVerified = true,
             Credentials = [Credential.Create(credentialIdentifier, credentialType)]
         };
 
@@ -83,6 +84,18 @@ public class User : AggregateRoot
         if (IsVerified)
             return Error.Conflict($"User with ID {Id} is already verified");
         IsVerified = true;
+        return Result.Success();
+    }
+
+    public Result AddPassword(string password, IHasher hasher)
+    {
+        if (!IsVerified)
+            return Error.Conflict($"User with ID {Id} is not verified");
+
+        if (PasswordHash is not null)
+            return Error.Conflict($"User with ID {Id} already has a password");
+
+        PasswordHash = hasher.Hash(password);
         return Result.Success();
     }
 

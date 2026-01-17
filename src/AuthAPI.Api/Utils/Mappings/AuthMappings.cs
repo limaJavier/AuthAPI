@@ -1,3 +1,4 @@
+using AuthAPI.Api.Features.Auth.AddPassword;
 using AuthAPI.Api.Features.Auth.ChangeForgottenPassword;
 using AuthAPI.Api.Features.Auth.ChangePassword;
 using AuthAPI.Api.Features.Auth.Common.Responses;
@@ -7,6 +8,7 @@ using AuthAPI.Api.Features.Auth.LoginWithEmail;
 using AuthAPI.Api.Features.Auth.RegisterWithEmail;
 using AuthAPI.Api.Features.Auth.VerifyEmail;
 using AuthAPI.Api.Features.Auth.VerifyRecoveryCode;
+using AuthAPI.Application.Features.Auth.Commands.AddPassword;
 using AuthAPI.Application.Features.Auth.Commands.ChangeForgottenPassword;
 using AuthAPI.Application.Features.Auth.Commands.ChangePassword;
 using AuthAPI.Application.Features.Auth.Commands.Common;
@@ -32,6 +34,7 @@ public class AuthMappings : IRegister
         config.NewConfig<ChangeForgottenPasswordRequest, ChangeForgottenPasswordCommand>();
         config.NewConfig<ChangePasswordRequest, ChangePasswordCommand>();
         config.NewConfig<EnterWithGoogleRequest, EnterWithGoogleCommand>();
+        config.NewConfig<AddPasswordRequest, AddPasswordCommand>();
 
         //** Responses mappings
         config.NewConfig<VerificationResult, VerificationResponse>();

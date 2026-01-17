@@ -49,6 +49,7 @@ public class EnterWithGoogleTests(ITestOutputHelper output, PostgresContainerFix
         Assert.NotNull(refreshTokenHeader);
         Assert.NotEmpty(refreshTokenHeader);
         Assert.NotEmpty(response.AccessToken);
+        Assert.True(user.IsVerified); // User verified
         Assert.Contains(user.Credentials, credential =>
             credential.Type == Domain.UserAggregate.Enums.CredentialType.Google &&
             credential.Identifier == Constants.User.GoogleIdentifier
